@@ -3,6 +3,7 @@ import torch.nn as nn
 from util import upsample, criterion_CEloss
 from TANet_element import *
 import pytorch_lightning as pl
+from params import MAX_EPOCHS
 
 # JSON
 LAMBDA_LR = 0.001
@@ -11,8 +12,10 @@ LAMBDA_LR = 0.001
 
 class TANet(pl.LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, dataset_train_loader):
         super(TANet, self).__init__()
+        self.len_train_loader = dataset_train_loader
+
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -44,10 +47,21 @@ class TANet(pl.LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:,0])
+
+        self.step += 1
         return loss
     
     def configure_optimizers(self):
+        self.step = 0
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
-        lambda_lr = lambda epoch:(float)(LAMBDA_LR)
-        model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
-        return [optimizer], [model_lr_scheduler]
+        #lambda_lr = lambda epoch:(float)(LAMBDA_LR)
+        lambda_lr = lambda epoch:(float)(MAX_EPOCHS*len(self.dataset_train_loader)-self.step)/(float)(MAX_EPOCHS*len(self.dataset_train_loader))
+        self.model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
+        return [optimizer], [self.model_lr_scheduler]
+
+    def trainin_epoch_end(self,outputs):
+        
+        # If the selected scheduler is a ReduceLROnPlateau scheduler.
+        if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            self.model_lr_scheduler.step()
+            

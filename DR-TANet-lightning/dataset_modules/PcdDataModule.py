@@ -2,12 +2,8 @@ from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader
 import datasets
+from params import NUM_WORKERS, DATA_DIR, BATCH_SIZE, SET_NUMBER
 
-# JSON
-NUM_WORKERS = 2
-DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-BATCH_SIZE = 1
-SET_NUMBER = 0
 
 class PcdDataModule(LightningDataModule):
 
