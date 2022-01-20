@@ -1,0 +1,4 @@
+opencv-python
+tqdm
+tensorboardX
+pytorch-lightning

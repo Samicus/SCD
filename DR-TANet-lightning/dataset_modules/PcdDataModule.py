@@ -4,9 +4,9 @@ from torch.utils.data import DataLoader
 import datasets
 
 # JSON
-NUM_WORKERS = 2
+NUM_WORKERS = 8
 DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 SET_NUMBER = 0
 
 class PcdDataModule(LightningDataModule):

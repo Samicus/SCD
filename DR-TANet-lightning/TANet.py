@@ -7,8 +7,6 @@ import pytorch_lightning as pl
 # JSON
 LAMBDA_LR = 0.001
 
-
-
 class TANet(pl.LightningModule):
 
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement):

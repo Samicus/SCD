@@ -11,8 +11,8 @@ groups = 4
 drtam = False
 refinement = False
 
-trainer = Trainer(gpus=1, fast_dev_run=True) # Debug
-#trainer = Trainer(gpus=1)
+#trainer = Trainer(gpus=1, fast_dev_run=True) # Debug
+trainer = Trainer(gpus=1)
 model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement)
 data_module = PcdDataModule()
 trainer.fit(model, data_module)
