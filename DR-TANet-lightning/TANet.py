@@ -1,8 +1,10 @@
+from parameters import LEARNING_RATE
 import torch
 import torch.nn as nn
 from util import upsample, criterion_CEloss
 from TANet_element import *
 import pytorch_lightning as pl
+from aim import Run
 
 # JSON
 LAMBDA_LR = 0.001
@@ -45,7 +47,7 @@ class TANet(pl.LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
+        optimizer = torch.optim.Adam(self.parameters(), lr=LEARNING_RATE, betas=(0.9,0.999))
         lambda_lr = lambda epoch:(float)(LAMBDA_LR)
         model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
         return [optimizer], [model_lr_scheduler]
