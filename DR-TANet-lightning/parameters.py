@@ -1,7 +1,7 @@
 # Parameters
 NUM_WORKERS = 8
 DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 SET_NUMBER = 0
 LEARNING_RATE = 0.001
 encoder_arch = 'resnet18'
