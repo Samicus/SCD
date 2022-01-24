@@ -6,16 +6,19 @@ from params import NUM_WORKERS, DATA_DIR, BATCH_SIZE, SET_NUMBER
 
 
 class PcdDataModule(LightningDataModule):
+    def __init__(self, set_nr):
+        self.set_nr = set_nr
+
 
     def train_dataloader(self):
         
         
-        return  DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(SET_NUMBER), "train")),
+        return  DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(self.set_nr), "train")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
       
 
     def test_dataloader(self):
-        return DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(SET_NUMBER), "test")),
+        return DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
