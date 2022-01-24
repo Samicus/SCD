@@ -4,7 +4,7 @@ import torch.nn as nn
 from util import upsample, criterion_CEloss
 from TANet_element import *
 import pytorch_lightning as pl
-from aim import Run
+import torchmetrics
 
 # JSON
 LAMBDA_LR = 0.001
@@ -21,6 +21,9 @@ class TANet(pl.LightningModule):
         self.classifier = nn.Conv2d(channels[0], 2, 1, padding=0, stride=1)
         self.bn = nn.BatchNorm2d(channels[0])
         self.relu = nn.ReLU(inplace=True)
+        
+        self.train_accuracy = torchmetrics.Accuracy()
+        self.f1_score = torchmetrics.F1Score(mdmc_average='samplewise')
 
     def forward(self, img):
 
@@ -43,7 +46,15 @@ class TANet(pl.LightningModule):
         criterion = criterion_CEloss(weight.cuda())   
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        loss = criterion(output_train, mask_train[:,0])
+        loss = criterion(output_train, mask_train[:, 0])
+        
+        # Log data to view in AIM
+        self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        self.train_accuracy(output_train, mask_train[:, 0])
+        self.log("train accuracy", self.train_accuracy, on_epoch=True, prog_bar=True, logger=True)
+        self.f1_score(output_train, mask_train[:, 0])
+        self.log("F1-Score", self.f1_score, on_epoch=True, prog_bar=True, logger=True)
+        
         return loss
     
     def configure_optimizers(self):
