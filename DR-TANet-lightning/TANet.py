@@ -1,14 +1,14 @@
+from parameters import LEARNING_RATE
 import torch
 import torch.nn as nn
 from util import upsample, criterion_CEloss
 from TANet_element import *
 import pytorch_lightning as pl
 from params import MAX_EPOCHS
+import torchmetrics
 
 # JSON
 LAMBDA_LR = 0.001
-
-
 
 class TANet(pl.LightningModule):
 
@@ -24,6 +24,9 @@ class TANet(pl.LightningModule):
         self.classifier = nn.Conv2d(channels[0], 2, 1, padding=0, stride=1)
         self.bn = nn.BatchNorm2d(channels[0])
         self.relu = nn.ReLU(inplace=True)
+        
+        self.train_accuracy = torchmetrics.Accuracy()
+        self.f1_score = torchmetrics.F1Score(mdmc_average='samplewise')
 
     def forward(self, img):
 
@@ -48,20 +51,27 @@ class TANet(pl.LightningModule):
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:,0])
 
-        self.step += 1
+        
+        # Log data to view in AIM
+        self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        self.train_accuracy(output_train, mask_train[:, 0])
+        self.log("train accuracy", self.train_accuracy, on_epoch=True, prog_bar=True, logger=True)
+        self.f1_score(output_train, mask_train[:, 0])
+        self.log("F1-Score", self.f1_score, on_epoch=True, prog_bar=True, logger=True)
         return loss
-    
+            
+
     def configure_optimizers(self):
-        self.step = 0
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
         #lambda_lr = lambda epoch:(float)(LAMBDA_LR)
-        lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.step)/(float)(MAX_EPOCHS*self.len_train_loader)
+        lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.global_step)/(float)(MAX_EPOCHS*self.len_train_loader)
         self.model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
         return [optimizer], [self.model_lr_scheduler]
 
-    def trainin_epoch_end(self,outputs):
+    def training_epoch_end(self,outputs):
         
         # If the selected scheduler is a ReduceLROnPlateau scheduler.
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
             
+       

@@ -1,0 +1,2 @@
+
+DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
