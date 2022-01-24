@@ -22,3 +22,18 @@ class PcdDataModule(LightningDataModule):
         return DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
+
+
+class VLCmuCdDataModule(LightningDataModule):
+    
+    
+    def train_dataloader(self):
+        return  DataLoader(datasets.vl_cmu_cd(pjoin(self.args.datadir, "train")),
+                                          num_workers=self.args.num_workers, batch_size=self.args.batch_size,
+                                          shuffle=True)
+      
+
+    def test_dataloader(self):
+        return DataLoader(datasets.vl_cmu_cd(pjoin(self.args.datadir, 'test')),
+                                          num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
+                                          shuffle=True)
