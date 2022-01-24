@@ -3,7 +3,6 @@ from DataModules import PcdDataModule, VLCmuCdDataModule
 from pytorch_lightning import Trainer
 from params import encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, MAX_EPOCHS, CHECKPOINT_DIR, config
 from os.path import join as pjoin
-import pytorch_lightning as pl
 from aim.pytorch_lightning import AimLogger
 import argparse
 

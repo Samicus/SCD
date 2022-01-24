@@ -6,8 +6,6 @@ import pytorch_lightning as pl
 from params import MAX_EPOCHS
 import torchmetrics
 
-# JSON
-LAMBDA_LR = 0.001
 
 class TANet(pl.LightningModule):
 
