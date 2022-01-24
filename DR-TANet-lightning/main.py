@@ -15,7 +15,7 @@ if config == 1:
         trainer.fit(model, data_module)
 
 if config == 2:
-    trainer = Trainer(gpus=1, max_epochs=MAX_EPOCHS, default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)))
+    trainer = Trainer(gpus=1, max_epochs=MAX_EPOCHS, default_root_dir=CHECKPOINT_DIR)
     data_module = VLCmuCdDataModule()
     len_train_loader = len(data_module.train_dataloader())
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)

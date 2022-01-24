@@ -28,12 +28,12 @@ class VLCmuCdDataModule(LightningDataModule):
     
     
     def train_dataloader(self):
-        return  DataLoader(datasets.vl_cmu_cd(pjoin(self.args.datadir, "train")),
-                                          num_workers=self.args.num_workers, batch_size=self.args.batch_size,
+        return  DataLoader(datasets.vl_cmu_cd(pjoin(DATA_DIR, "train")),
+                                          num_workers=self.NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
       
 
     def test_dataloader(self):
-        return DataLoader(datasets.vl_cmu_cd(pjoin(self.args.datadir, 'test')),
+        return DataLoader(datasets.vl_cmu_cd(pjoin(DATA_DIR, 'test')),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
