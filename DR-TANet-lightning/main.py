@@ -1,4 +1,3 @@
-from parameters import encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement
 from TANet import TANet
 from DataModules import PcdDataModule, VLCmuCdDataModule
 from pytorch_lightning import Trainer

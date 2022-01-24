@@ -1,4 +1,3 @@
-from parameters import LEARNING_RATE
 import torch
 import torch.nn as nn
 from util import upsample, criterion_CEloss
