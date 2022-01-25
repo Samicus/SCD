@@ -18,12 +18,15 @@ class PcdDataModule(LightningDataModule):
                                           shuffle=True)
       
 
+    def val_dataloader(self):
+        return DataLoader(datasets.pcd(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
+                                          num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
+                                          shuffle=True)
+
     def test_dataloader(self):
         return DataLoader(datasets.pcd_eval(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)
-
-
 class VLCmuCdDataModule(LightningDataModule):
     
     
@@ -33,7 +36,7 @@ class VLCmuCdDataModule(LightningDataModule):
                                           shuffle=True)
       
 
-    def test_dataloader(self):
+    def val_dataloader(self):
         return DataLoader(datasets.vl_cmu_cd_eval(pjoin(DATA_DIR, 'test')),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=True)

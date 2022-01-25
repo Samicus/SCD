@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss, cal_metrcis
+from util import upsample, criterion_CEloss#, cal_metrcis, store_imgs_and_cal_matrics
 from TANet_element import *
 import pytorch_lightning as pl
-from params import MAX_EPOCHS
+from params import MAX_EPOCHS, store_imgs
 import torchmetrics
+import torch.nn.functional as F
+import numpy as np
 
 
 class TANet(pl.LightningModule):
@@ -57,23 +59,47 @@ class TANet(pl.LightningModule):
         self.log("F1-Score", self.f1_score, on_epoch=True, prog_bar=True, logger=True)
         return loss
             
-
     def validation_step(self, batch, batch_idx):
+        weight = torch.ones(2)
+        criterion = criterion_CEloss(weight.cuda())   
+        inputs_val, mask_val = batch
+        output_train = self(inputs_val)
+        val_loss = criterion(output_train, mask_val[:,0])
+        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
+        return {"val_loss" : val_loss}
+    """
+    def test_step(self, batch, batch_idx):
         
         weight = torch.ones(2)
         criterion = criterion_CEloss(weight.cuda())  
+        t0, t1, mask_r, w_ori, h_ori, w_r, h_r = batch
+        input_ = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
+        input_ = input_.view(1,-1,self.w_r,self.h_r)
+        input_ = input_.cuda()
+        output= self(input_)
+        input_ = input_[0].cpu().data
+        img_t0 = input_[0:3,:,:]
+        img_t1 = input_[3:6,:,:]
+        img_t0 = (img_t0+1)*128
+        img_t1 = (img_t1+1)*128
+        output = output[0].cpu().data
+
+        mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
+        mask_gt = np.squeeze(np.where(mask_r==True,255,0),axis=0)
+        if store_imgs:
+            #precision, recall, accuracy, f1_score = store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, fn_img)
+            pass
+        else:
+            precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
         
-        input_test, target_test = batch
-        output_test = self(input_test)
-        precision, recall, accuracy, f1_score = cal_metrcis(output_test,target_test[:,0])
-        loss = criterion(output_test, target_test[:,0])
+
 
         self.log("test_accuracy", accuracy, on_epoch=True, prog_bar=True, logger=True)
         self.log("test_precision", precision, on_epoch=True, prog_bar=True, logger=True)
         self.log("test_recall", recall, on_epoch=True, prog_bar=True, logger=True)
         self.log("test_F1-score", f1_score, on_epoch=True, prog_bar=True, logger=True)
-        return {"val_loss": loss}
-
+        return {"test_loss": loss}
+    """
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))

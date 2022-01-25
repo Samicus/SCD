@@ -1,13 +1,16 @@
-config = 2
+config = 1
   
+#dir_img = ...
+#resultdir = ...
+#store_imgs = ...
 if config == 1:
     MAX_EPOCHS = 20
     NUM_WORKERS = 2
-    DATA_DIR = '/home/elias/sam_dev/TSUNAMI/'
+    DATA_DIR = '/home/samnehme/Dev/SCD_project/TSUNAMI'
     #DATA_DIR = 
-    CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/tsunami'
+    CHECKPOINT_DIR = '/home/samnehme/Dev/SCD_project/Checkpoints/tsunami'
     #CHECKPOINT_DIR = 
-    BATCH_SIZE = 16
+    BATCH_SIZE = 1
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1
@@ -16,6 +19,7 @@ if config == 1:
     groups = 4
     drtam = False
     refinement = False
+    store_imgs = False
 
 if config == 2:
     MAX_EPOCHS = 20
@@ -33,4 +37,4 @@ if config == 2:
     groups = 4
     drtam = True
     refinement = True
-          
+    store_imgs = False
