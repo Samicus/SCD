@@ -1,8 +1,8 @@
 config = 1
   
 if config == 1:
-    MAX_EPOCHS = 20
-    NUM_WORKERS = 2
+    MAX_EPOCHS = 100
+    NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
     #DATA_DIR = 
     CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
@@ -19,7 +19,7 @@ if config == 1:
 
 if config == 2:
     MAX_EPOCHS = 20
-    NUM_WORKERS = 2
+    NUM_WORKERS = 8
     DATA_DIR = '/home/elias/sam_dev/vl_cmu_cd_binary_mask/'
     #DATA_DIR = 
     CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/vl_cmu_cd'

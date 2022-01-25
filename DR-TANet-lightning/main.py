@@ -5,16 +5,20 @@ from params import encoder_arch, local_kernel_size, stride, padding, groups, drt
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
+from datetime import datetime
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--aim", action="store_true")
 parsed_args = parser.parse_args()
 
+now = datetime.now()
+date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
+
 if config == 1:
     for set_nr in range(2):
         aim_logger = AimLogger(
-            experiment='resnet18_PCD',
+            experiment='resnet18_PCD_set{}_{}'.format(set_nr, date_time),
             train_metric_prefix='train_',
             val_metric_prefix='val_',
             test_metric_prefix='test_'
@@ -32,7 +36,7 @@ if config == 1:
 
 if config == 2:
     aim_logger = AimLogger(
-            experiment='resnet18_PCD',
+            experiment='resnet18_PCD_set_{}'.format(date_time),
             train_metric_prefix='train_',
             val_metric_prefix='val_',
             test_metric_prefix='test_'
