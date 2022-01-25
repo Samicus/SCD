@@ -1,11 +1,11 @@
-config = 2
+config = 1
   
 if config == 1:
     MAX_EPOCHS = 20
     NUM_WORKERS = 2
-    DATA_DIR = '/home/elias/sam_dev/TSUNAMI/'
+    DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
     #DATA_DIR = 
-    CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/tsunami'
+    CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
     #CHECKPOINT_DIR = 
     BATCH_SIZE = 16
     SET_NUMBER = 0
@@ -33,4 +33,3 @@ if config == 2:
     groups = 4
     drtam = True
     refinement = True
-          

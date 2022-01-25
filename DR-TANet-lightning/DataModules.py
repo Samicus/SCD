@@ -5,7 +5,7 @@ import datasets
 from params import NUM_WORKERS, DATA_DIR, BATCH_SIZE, SET_NUMBER
 
 
-class PcdDataModule(LightningDataModule):
+class PCD(LightningDataModule):
     def __init__(self, set_nr):
         self.set_nr = set_nr
 

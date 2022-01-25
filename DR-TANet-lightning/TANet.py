@@ -23,7 +23,6 @@ class TANet(pl.LightningModule):
         self.relu = nn.ReLU(inplace=True)
         
         self.train_accuracy = torchmetrics.Accuracy()
-        self.f1_score = torchmetrics.F1Score(mdmc_average='samplewise')
 
     def forward(self, img):
 
@@ -42,33 +41,32 @@ class TANet(pl.LightningModule):
         return pred
     
     def training_step(self, batch, batch_idx):
+        
         weight = torch.ones(2)
         criterion = criterion_CEloss(weight.cuda())   
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        loss = criterion(output_train, mask_train[:,0])
-
+        loss = criterion(output_train, mask_train[:, 0])
         
         # Log data to view in AIM
         self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
         self.train_accuracy(output_train, mask_train[:, 0])
         self.log("train accuracy", self.train_accuracy, on_epoch=True, prog_bar=True, logger=True)
-        self.f1_score(output_train, mask_train[:, 0])
-        self.log("F1-Score", self.f1_score, on_epoch=True, prog_bar=True, logger=True)
+        lambda_lr = self.model_lr_scheduler.get_last_lr()[0]
+        self.log("lambda_lr", lambda_lr, on_epoch=True, prog_bar=True, logger=True)
+        
         return loss
-            
 
     def configure_optimizers(self):
+        
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
-        #lambda_lr = lambda epoch:(float)(LAMBDA_LR)
         lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.global_step)/(float)(MAX_EPOCHS*self.len_train_loader)
         self.model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
+        
         return [optimizer], [self.model_lr_scheduler]
 
-    def training_epoch_end(self,outputs):
+    def training_epoch_end(self, outputs):
         
         # If the selected scheduler is a ReduceLROnPlateau scheduler.
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
-            
-       
