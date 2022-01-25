@@ -37,3 +37,24 @@ class Upsample(nn.Module):
         x = x + skip
         x = self.blend_conv.forward(x)
         return x
+
+def cal_metrcis(pred,target):
+
+    temp = np.dstack((pred == 0, target == 0))
+    TP = sum(sum(np.all(temp,axis=2)))
+
+    temp = np.dstack((pred == 0, target == 255))
+    FP = sum(sum(np.all(temp,axis=2)))
+
+    temp = np.dstack((pred == 255, target == 0))
+    FN = sum(sum(np.all(temp, axis=2)))
+
+    temp = np.dstack((pred == 255, target == 255))
+    TN = sum(sum(np.all(temp, axis=2)))
+
+    precision = TP / (TP + FP)
+    recall = TP / (TP + FN)
+    accuracy = (TP + TN) / (TP + FP + FN + TN)
+    f1_score = 2 * recall * precision / (precision + recall)
+
+    return (precision, recall, accuracy, f1_score)

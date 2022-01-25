@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss
+from util import upsample, criterion_CEloss, cal_metrcis
 from TANet_element import *
 import pytorch_lightning as pl
 from params import MAX_EPOCHS
@@ -57,6 +57,23 @@ class TANet(pl.LightningModule):
         self.log("F1-Score", self.f1_score, on_epoch=True, prog_bar=True, logger=True)
         return loss
             
+
+    def validation_step(self, batch, batch_idx):
+        
+        weight = torch.ones(2)
+        criterion = criterion_CEloss(weight.cuda())  
+        
+        input_test, target_test = batch
+        output_test = self(input_test)
+        precision, recall, accuracy, f1_score = cal_metrcis(output_test,target_test[:,0])
+        loss = criterion(output_test, target_test[:,0])
+
+        self.log("test_accuracy", accuracy, on_epoch=True, prog_bar=True, logger=True)
+        self.log("test_precision", precision, on_epoch=True, prog_bar=True, logger=True)
+        self.log("test_recall", recall, on_epoch=True, prog_bar=True, logger=True)
+        self.log("test_F1-score", f1_score, on_epoch=True, prog_bar=True, logger=True)
+        return {"val_loss": loss}
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
