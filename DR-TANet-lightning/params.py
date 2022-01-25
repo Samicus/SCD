@@ -1,13 +1,14 @@
 config = 1
   
+#dir_img = ...
+#resultdir = ...
+#store_imgs = ...
 if config == 1:
     MAX_EPOCHS = 100
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-    #DATA_DIR = 
     CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
-    #CHECKPOINT_DIR = 
-    BATCH_SIZE = 16
+    BATCH_SIZE = 1
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1
@@ -16,6 +17,7 @@ if config == 1:
     groups = 4
     drtam = False
     refinement = False
+    store_imgs = False
 
 if config == 2:
     MAX_EPOCHS = 20
@@ -33,3 +35,4 @@ if config == 2:
     groups = 4
     drtam = True
     refinement = True
+    store_imgs = False
