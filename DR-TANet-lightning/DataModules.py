@@ -26,7 +26,7 @@ class PCD(LightningDataModule):
     def test_dataloader(self):
         return DataLoader(datasets.pcd_eval(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
-                                          shuffle=True)
+                                          shuffle=False)
 class VLCmuCdDataModule(LightningDataModule):
     
     

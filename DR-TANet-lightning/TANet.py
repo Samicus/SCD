@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss#, cal_metrcis, store_imgs_and_cal_matrics
+from util import upsample, criterion_CEloss, cal_metrcis, store_imgs_and_cal_matrics
 from TANet_element import *
 import pytorch_lightning as pl
 from params import MAX_EPOCHS, store_imgs
@@ -70,24 +70,27 @@ class TANet(pl.LightningModule):
     
     def test_step(self, batch, batch_idx):
         
-        t0, t1, mask, w_ori, h_ori, w_r, h_r = batch
-        input = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
-        input = input.view(1,-1,w_r,h_r)
-        input = input.cuda()
-        output= self(input)
-
-        input = input[0].cpu().data
-        img_t0 = input[0:3,:,:]
-        img_t1 = input[3:6,:,:]
-        img_t0 = (img_t0+1)*128
-        img_t1 = (img_t1+1)*128
-        output = output[0].cpu().data
-        #mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
-        mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-        mask_gt = np.squeeze(np.where(mask==True,255,0),axis=0)
-        ds = "TSUNAMI"
-        img_count = len(mask)
+        t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
+        img_count = len(mask_b)
+        
         for index in range(img_count):
+            t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[index], t1_b[index], w_ori_b[index], h_ori_b[index], w_r_b[index], h_r_b[index]
+            input = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
+            input = input.view(1,-1,w_r,h_r)
+            input = input.cuda()
+            output= self(input)
+
+            input = input[0].cpu().data
+            img_t0 = input[0:3,:,:]
+            img_t1 = input[3:6,:,:]
+            img_t0 = (img_t0+1)*128
+            img_t1 = (img_t1+1)*128
+            output = output[0].cpu().data
+            #mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
+            mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
+            mask_gt = np.squeeze(np.where(mask==True,255,0),axis=0)
+            ds = "TSUNAMI"
+            
             store_imgs_and_cal_matrics(t0[index], t1[index], mask_gt[index], mask_pred[index], w_r[index], h_r[index], w_ori[index], h_ori[index], self.set_, ds, index)
 
     def configure_optimizers(self):
