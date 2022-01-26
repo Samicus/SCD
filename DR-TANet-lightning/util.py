@@ -4,6 +4,8 @@ import numpy as np
 #from params import dir_img, resultdir
 import os
 import cv2
+import csv
+from os.path import join as pjoin
 
 __all__ = ['Upsample', 'upsample']
 
@@ -62,9 +64,14 @@ def cal_metrcis(pred,target):
     f1_score = 2 * recall * precision / (precision + recall)
 
     return (precision, recall, accuracy, f1_score)
-"""
-def store_imgs_and_cal_matrics(self, t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, fn_img):
 
+def store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
+        
+        #move to params
+        dir_img = "/home/samnehme/Dev/SCD_project/SCD/dir_img"
+        resultdir  = "/home/samnehme/Dev/SCD_project/SCD/resultdir"
+
+        fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
         w, h = w_r, h_r
         img_save = np.zeros((w * 2, h * 2, 3), dtype=np.uint8)
         img_save[0:w, 0:h, :] = np.transpose(t0.numpy(), (1, 2, 0)).astype(np.uint8)
@@ -92,4 +99,3 @@ def store_imgs_and_cal_matrics(self, t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori
         metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
         f_metrics.close()
         return (precision, recall, accuracy, f1_score)
-"""

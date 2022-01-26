@@ -15,6 +15,8 @@ parsed_args = parser.parse_args()
 now = datetime.now()
 date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
 
+
+
 if config == 1:
     for set_nr in range(2):
         aim_logger = AimLogger(
@@ -30,8 +32,9 @@ if config == 1:
             trainer = Trainer(gpus=1, max_epochs=MAX_EPOCHS, default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)))
         data_module = PCD(set_nr)
         len_train_loader = len(data_module.train_dataloader())
-        model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)
+        model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, set_nr)
         trainer.fit(model, data_module)
+        trainer.test(ckpt_path="best")
         
 
 if config == 2:

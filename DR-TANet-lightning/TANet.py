@@ -11,10 +11,10 @@ import numpy as np
 
 class TANet(pl.LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, set_):
         super(TANet, self).__init__()
         self.len_train_loader = len_train_loader
-
+        self.set_ = set_
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -67,39 +67,28 @@ class TANet(pl.LightningModule):
         val_loss = criterion(output_train, mask_val[:,0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         return {"val_loss" : val_loss}
-    """
+    
     def test_step(self, batch, batch_idx):
         
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())  
-        t0, t1, mask_r, w_ori, h_ori, w_r, h_r = batch
-        input_ = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
-        input_ = input_.view(1,-1,self.w_r,self.h_r)
-        input_ = input_.cuda()
-        output= self(input_)
-        input_ = input_[0].cpu().data
-        img_t0 = input_[0:3,:,:]
-        img_t1 = input_[3:6,:,:]
+        t0, t1, mask, w_ori, h_ori, w_r, h_r = batch
+        input = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
+        input = input.view(1,-1,w_r,h_r)
+        input = input.cuda()
+        output= self(input)
+
+        input = input[0].cpu().data
+        img_t0 = input[0:3,:,:]
+        img_t1 = input[3:6,:,:]
         img_t0 = (img_t0+1)*128
         img_t1 = (img_t1+1)*128
         output = output[0].cpu().data
-
+        #mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
         mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-        mask_gt = np.squeeze(np.where(mask_r==True,255,0),axis=0)
-        if store_imgs:
-            #precision, recall, accuracy, f1_score = store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, fn_img)
-            pass
-        else:
-            precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
-        
-
-
-        self.log("test_accuracy", accuracy, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_precision", precision, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_recall", recall, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_F1-score", f1_score, on_epoch=True, prog_bar=True, logger=True)
-        return {"test_loss": loss}
-    """
+        mask_gt = np.squeeze(np.where(mask==True,255,0),axis=0)
+        ds = "TSUNAMI"
+        img_count = len(mask)
+        for index in range(img_count):
+            store_imgs_and_cal_matrics(t0[index], t1[index], mask_gt[index], mask_pred[index], w_r[index], h_r[index], w_ori[index], h_ori[index], self.set_, ds, index)
 
     def configure_optimizers(self):
         

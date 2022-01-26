@@ -1,13 +1,15 @@
+from socketserver import DatagramRequestHandler
+
+
 config = 1
   
-#dir_img = ...
-#resultdir = ...
-#store_imgs = ...
+
 if config == 1:
     MAX_EPOCHS = 100
-    NUM_WORKERS = 8
-    DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-    CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
+    NUM_WORKERS = 1
+    DATA_DIR = '/home/samnehme/Dev/SCD_project/TSUNAMI'
+
+    CHECKPOINT_DIR = '/home/samnehme/Dev/SCD_project/Checkpoints'
     BATCH_SIZE = 1
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
@@ -36,3 +38,17 @@ if config == 2:
     drtam = True
     refinement = True
     store_imgs = False
+
+
+
+    local_kernel_size
+    encoder_arch
+    resultdir
+    dataset 
+    attn_padding = 0
+    attn_groups = 4
+    attn_stride = 1
+    multigpu
+    checkpointdir
+    dir_img 
+    store_imgs 
