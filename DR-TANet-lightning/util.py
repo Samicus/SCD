@@ -68,9 +68,9 @@ def cal_metrcis(pred,target):
 def store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
         
         #move to params
-        dir_img = "/home/samnehme/Dev/SCD_project/SCD/dir_img"
-        resultdir  = "/home/samnehme/Dev/SCD_project/SCD/resultdir"
-
+        dir_img = "/home/elias/sam_dev/SCD/dir_img"
+        resultdir  = "/home/elias/sam_dev/SCD/resultdir"
+        print("\n",index,"\n")
         fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
         w, h = w_r, h_r
         img_save = np.zeros((w * 2, h * 2, 3), dtype=np.uint8)
@@ -78,9 +78,10 @@ def store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_or
         img_save[0:w, h:h * 2, :] = np.transpose(t1.numpy(), (1, 2, 0)).astype(np.uint8)
         img_save[w:w * 2, 0:h, :] = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
         img_save[w:w * 2, h:h * 2, :] = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-
+        print("w: ", w)
+        print("w_ori: ", w_ori)
         if w != w_ori or h != h_ori:
-            img_save = cv2.resize(img_save, (h_ori, w_ori))
+            img_save = cv2.resize(img_save, (h_ori.item(), w_ori.item()))
 
         fn_save = fn_img
         if not os.path.exists(dir_img):
@@ -88,14 +89,16 @@ def store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_or
 
         print('Writing' + fn_save + '......')
         cv2.imwrite(fn_save, img_save)
-
+        """
         if set_ is not None:
             f_metrics = open(pjoin(resultdir, "eval_metrics_set{0}(single_image).csv".format(set_)), 'a+')
         else:
             f_metrics = open(pjoin(resultdir, "eval_metrics(single_image).csv"), 'a+')
-        metrics_writer = csv.writer(f_metrics)
+        """
+        #metrics_writer = csv.writer(f_metrics)
         fn = '{0}-{1:08d}'.format(ds,index)
         precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
-        metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
-        f_metrics.close()
+        #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
+        #f_metrics.close()
+        print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
         return (precision, recall, accuracy, f1_score)
