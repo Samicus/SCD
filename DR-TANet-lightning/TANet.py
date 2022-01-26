@@ -7,6 +7,7 @@ from params import MAX_EPOCHS, store_imgs
 import torchmetrics
 import torch.nn.functional as F
 import numpy as np
+from torchmetrics.functional import jaccard_index, precision_recall, f1_score
 
 
 class TANet(pl.LightningModule):
@@ -14,7 +15,6 @@ class TANet(pl.LightningModule):
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
         self.len_train_loader = len_train_loader
-
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -24,7 +24,10 @@ class TANet(pl.LightningModule):
         self.bn = nn.BatchNorm2d(channels[0])
         self.relu = nn.ReLU(inplace=True)
         
-        self.train_accuracy = torchmetrics.Accuracy()
+        #self.precision_metric = torchmetrics.Precision(num_classes=2, mdmc_average='global')
+        #self.IoU_metric = torchmetrics.JaccardIndex(num_classes=2)
+        #self.f1_score = torchmetrics.F1Score(num_classes=2, mdmc_average='global')
+        #self.recall_metric = torchmetrics.Recall(num_classes=2, mdmc_average='global')
 
     def forward(self, img):
 
@@ -52,54 +55,37 @@ class TANet(pl.LightningModule):
         
         # Log data to view in AIM
         self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
-        self.train_accuracy(output_train, mask_train[:, 0])
-        self.log("train accuracy", self.train_accuracy, on_epoch=True, prog_bar=True, logger=True)
         lambda_lr = self.model_lr_scheduler.get_last_lr()[0]
         self.log("lambda_lr", lambda_lr, on_epoch=True, prog_bar=True, logger=True)
         
         return loss
-            
+    
+    def test_step(self, batch, batch_idx):
+        weight = torch.ones(2)
+        criterion = criterion_CEloss(weight.cuda())
+        inputs_test, mask_test = batch
+        output_test = self(inputs_test)
+        test_loss = criterion(output_test, mask_test[:, 0])
+        self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
+        
+        return {"test_loss" : test_loss}
+    
     def validation_step(self, batch, batch_idx):
         weight = torch.ones(2)
         criterion = criterion_CEloss(weight.cuda())   
         inputs_val, mask_val = batch
-        output_train = self(inputs_val)
-        val_loss = criterion(output_train, mask_val[:,0])
+        outputs_val = self(inputs_val)
+        val_loss = criterion(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
+        
+        (precision, recall) = precision_recall(outputs_val, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
+        
+        self.log("precision", precision, on_epoch=True, logger=True)
+        self.log("recall", recall, on_epoch=True, logger=True)
+        self.log("IoU", jaccard_index(outputs_val, mask_val[:, 0]), on_epoch=True, logger=True)
+        self.log("F1-Score", f1_score(outputs_val, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
+        
         return {"val_loss" : val_loss}
-    """
-    def test_step(self, batch, batch_idx):
-        
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())  
-        t0, t1, mask_r, w_ori, h_ori, w_r, h_r = batch
-        input_ = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
-        input_ = input_.view(1,-1,self.w_r,self.h_r)
-        input_ = input_.cuda()
-        output= self(input_)
-        input_ = input_[0].cpu().data
-        img_t0 = input_[0:3,:,:]
-        img_t1 = input_[3:6,:,:]
-        img_t0 = (img_t0+1)*128
-        img_t1 = (img_t1+1)*128
-        output = output[0].cpu().data
-
-        mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-        mask_gt = np.squeeze(np.where(mask_r==True,255,0),axis=0)
-        if store_imgs:
-            #precision, recall, accuracy, f1_score = store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, fn_img)
-            pass
-        else:
-            precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
-        
-
-
-        self.log("test_accuracy", accuracy, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_precision", precision, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_recall", recall, on_epoch=True, prog_bar=True, logger=True)
-        self.log("test_F1-score", f1_score, on_epoch=True, prog_bar=True, logger=True)
-        return {"test_loss": loss}
-    """
 
     def configure_optimizers(self):
         

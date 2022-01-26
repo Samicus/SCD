@@ -8,15 +8,15 @@ if config == 1:
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
     CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
-    BATCH_SIZE = 1
+    BATCH_SIZE = 8
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1
     stride = 1
     padding = 0
     groups = 4
-    drtam = False
-    refinement = False
+    drtam = True
+    refinement = True
     store_imgs = False
 
 if config == 2:
