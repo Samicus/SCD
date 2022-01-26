@@ -7,9 +7,8 @@ config = 1
 if config == 1:
     MAX_EPOCHS = 100
     NUM_WORKERS = 1
-    DATA_DIR = '/home/samnehme/Dev/SCD_project/TSUNAMI'
-
-    CHECKPOINT_DIR = '/home/samnehme/Dev/SCD_project/Checkpoints'
+    DATA_DIR = '/home/elias/sam_dev/TSUNAMI'
+    CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/tsunami'
     BATCH_SIZE = 1
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
