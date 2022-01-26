@@ -4,11 +4,9 @@ from util import upsample, criterion_CEloss#, cal_metrcis, store_imgs_and_cal_ma
 from TANet_element import *
 import pytorch_lightning as pl
 from params import MAX_EPOCHS, store_imgs
-import torchmetrics
 import torch.nn.functional as F
 import numpy as np
 from torchmetrics.functional import jaccard_index, precision_recall, f1_score
-
 
 class TANet(pl.LightningModule):
 
@@ -23,11 +21,6 @@ class TANet(pl.LightningModule):
         self.classifier = nn.Conv2d(channels[0], 2, 1, padding=0, stride=1)
         self.bn = nn.BatchNorm2d(channels[0])
         self.relu = nn.ReLU(inplace=True)
-        
-        #self.precision_metric = torchmetrics.Precision(num_classes=2, mdmc_average='global')
-        #self.IoU_metric = torchmetrics.JaccardIndex(num_classes=2)
-        #self.f1_score = torchmetrics.F1Score(num_classes=2, mdmc_average='global')
-        #self.recall_metric = torchmetrics.Recall(num_classes=2, mdmc_average='global')
 
     def forward(self, img):
 
@@ -48,15 +41,11 @@ class TANet(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         
         weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())   
+        criterion = criterion_CEloss(weight.cuda())
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:, 0])
-        
-        # Log data to view in AIM
-        self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
-        lambda_lr = self.model_lr_scheduler.get_last_lr()[0]
-        self.log("lambda_lr", lambda_lr, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train loss for batch_{}".format(batch_idx), loss, on_epoch=True, prog_bar=True, logger=True)
         
         return loss
     
@@ -64,24 +53,26 @@ class TANet(pl.LightningModule):
         weight = torch.ones(2)
         criterion = criterion_CEloss(weight.cuda())
         inputs_test, mask_test = batch
-        output_test = self(inputs_test)
-        test_loss = criterion(output_test, mask_test[:, 0])
+        outputs_test = self(inputs_test)
+        test_loss = criterion(outputs_test, mask_test[:, 0])
         self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
         
-        return {"test_loss" : test_loss}
+        return {"test loss for batch_{}".format(batch_idx) : test_loss}
     
     def validation_step(self, batch, batch_idx):
         weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())   
+        criterion = criterion_CEloss(weight.cuda())
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
         val_loss = criterion(outputs_val, mask_val[:, 0])
-        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val loss for batch_{}".format(batch_idx), val_loss, on_epoch=True, prog_bar=True, logger=True)
         
+        # Precision and recall
         (precision, recall) = precision_recall(outputs_val, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
-        
         self.log("precision", precision, on_epoch=True, logger=True)
         self.log("recall", recall, on_epoch=True, logger=True)
+        
+        # Intersection over Union and F1-Score
         self.log("IoU", jaccard_index(outputs_val, mask_val[:, 0]), on_epoch=True, logger=True)
         self.log("F1-Score", f1_score(outputs_val, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
         
