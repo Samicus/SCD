@@ -45,7 +45,7 @@ class TANet(pl.LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:, 0])
-        self.log("train loss for batch_{}".format(batch_idx), loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
         
         return loss
     
@@ -57,7 +57,7 @@ class TANet(pl.LightningModule):
         test_loss = criterion(outputs_test, mask_test[:, 0])
         self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
         
-        return {"test loss for batch_{}".format(batch_idx) : test_loss}
+        return {"test loss" : test_loss}
     
     def validation_step(self, batch, batch_idx):
         weight = torch.ones(2)
@@ -65,7 +65,7 @@ class TANet(pl.LightningModule):
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
         val_loss = criterion(outputs_val, mask_val[:, 0])
-        self.log("val loss for batch_{}".format(batch_idx), val_loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
         # Precision and recall
         (precision, recall) = precision_recall(outputs_val, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
