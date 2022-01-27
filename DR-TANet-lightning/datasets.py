@@ -10,10 +10,10 @@ from os.path import join as pjoin
 def check_validness(f):
     return any([i in spt(f)[1] for i in ['jpg','png']])
 
-class pcd(Dataset):
+class PCD(Dataset):
 
     def __init__(self,root):
-        super(pcd, self).__init__()
+        super(PCD, self).__init__()
         self.img_t0_root = pjoin(root,'t0')
         self.img_t1_root = pjoin(root,'t1')
         self.img_mask_root = pjoin(root,'mask')

@@ -1,15 +1,12 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss, cal_metrcis, store_imgs_and_cal_matrics
+from util import upsample, criterion_CEloss
 from TANet_element import *
-import pytorch_lightning as pl
-from params import MAX_EPOCHS, store_imgs
-import torchmetrics
-import torch.nn.functional as F
-import numpy as np
+from pytorch_lightning import LightningModule
+from params import MAX_EPOCHS
+from torchmetrics.functional import jaccard_index, precision_recall, f1_score
 
-
-class TANet(pl.LightningModule):
+class TANet(LightningModule):
 
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, set_):
         super(TANet, self).__init__()
@@ -23,8 +20,6 @@ class TANet(pl.LightningModule):
         self.classifier = nn.Conv2d(channels[0], 2, 1, padding=0, stride=1)
         self.bn = nn.BatchNorm2d(channels[0])
         self.relu = nn.ReLU(inplace=True)
-        
-        self.train_accuracy = torchmetrics.Accuracy()
 
     def forward(self, img):
 
@@ -44,55 +39,42 @@ class TANet(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())   
+        criterion = self.get_criterion()
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:, 0])
-        
-        # Log data to view in AIM
         self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
-        self.train_accuracy(output_train, mask_train[:, 0])
-        self.log("train accuracy", self.train_accuracy, on_epoch=True, prog_bar=True, logger=True)
-        lambda_lr = self.model_lr_scheduler.get_last_lr()[0]
-        self.log("lambda_lr", lambda_lr, on_epoch=True, prog_bar=True, logger=True)
         
         return loss
-            
-    def validation_step(self, batch, batch_idx):
-        print("BBBBBBBBBBBBBBBBBBBBBBBBBB\n\n")
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())   
-        inputs_val, mask_val = batch
-        output_train = self(inputs_val)
-        val_loss = criterion(output_train, mask_val[:,0])
-        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
-        return {"val_loss" : val_loss}
     
     def test_step(self, batch, batch_idx):
         
-        t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
-        img_count = len(mask_b.cpu())
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",mask_b.shape,"n\n")
-        index = batch_idx
-        t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b, t1_b, mask_b, w_ori_b.item(), h_ori_b.item(), w_r_b.item(), h_r_b.item()
-        input = torch.from_numpy(np.concatenate((t0.numpy(), t1.numpy()),axis=0)).contiguous()
-        input = input.view(1,-1,w_r,h_r)
-        #input = input.cuda()
-        output= self(input)
-
-        input = input[0].cpu().data
-        img_t0 = input[0:3,:,:]
-        img_t1 = input[3:6,:,:]
-        img_t0 = (img_t0+1)*128
-        img_t1 = (img_t1+1)*128
-        output = output[0].cpu().data
-	#mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
-        mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-        mask_gt = np.squeeze(np.where(mask==True,255,0),axis=0)
-        ds = "TSUNAMI"
-	    
-        store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+        criterion = self.get_criterion()
+        inputs_test, mask_test = batch
+        outputs_test = self(inputs_test)
+        test_loss = criterion(outputs_test, mask_test[:, 0])
+        self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
+        
+        return {"test loss" : test_loss}
+    
+    def validation_step(self, batch, batch_idx):
+      
+        criterion = self.get_criterion(
+        inputs_val, mask_val = batch
+        outputs_val = self(inputs_val)
+        val_loss = criterion(outputs_val, mask_val[:, 0])
+        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
+        
+        # Precision and recall
+        (precision, recall) = precision_recall(outputs_val, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
+        self.log("precision", precision, on_epoch=True, logger=True)
+        self.log("recall", recall, on_epoch=True, logger=True)
+        
+        # Intersection over Union and F1-Score
+        self.log("IoU", jaccard_index(outputs_val, mask_val[:, 0]), on_epoch=True, logger=True)
+        self.log("F1-Score", f1_score(outputs_val, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
+        
+        return {"val_loss" : val_loss}
 
     def configure_optimizers(self):
         
@@ -107,3 +89,12 @@ class TANet(pl.LightningModule):
         # If the selected scheduler is a ReduceLROnPlateau scheduler.
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
+            
+    def get_criterion(self):
+        # To allow for both CPU and GPU runtime
+        weight = torch.ones(2)
+        try:
+            criterion = criterion_CEloss(weight.cuda())
+        except RuntimeError:
+            criterion = criterion_CEloss()
+        return criterion

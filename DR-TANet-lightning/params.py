@@ -1,26 +1,22 @@
-from socketserver import DatagramRequestHandler
+CONFIG = 'PCD'
 
-
-config = 1
-  
-
-if config == 1:
+if CONFIG == 'PCD':
     MAX_EPOCHS = 100
-    NUM_WORKERS = 1
-    DATA_DIR = '/home/elias/sam_dev/TSUNAMI'
-    CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/tsunami'
-    BATCH_SIZE = 1
+    NUM_WORKERS = 8
+    DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
+    CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
+    BATCH_SIZE = 16
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1
     stride = 1
     padding = 0
     groups = 4
-    drtam = False
-    refinement = False
-    store_imgs = False
+    drtam = True
+    refinement = True
+    store_imgs = True
 
-if config == 2:
+else:
     MAX_EPOCHS = 20
     NUM_WORKERS = 8
     DATA_DIR = '/home/elias/sam_dev/vl_cmu_cd_binary_mask/'
