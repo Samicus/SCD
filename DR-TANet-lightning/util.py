@@ -4,6 +4,8 @@ import numpy as np
 #from params import dir_img, resultdir
 import os
 import cv2
+import csv
+from os.path import join as pjoin
 
 __all__ = ['Upsample', 'upsample']
 
@@ -43,7 +45,8 @@ class Upsample(nn.Module):
         return x
 
 def cal_metrcis(pred,target):
-
+    print(pred.shape)
+    target = target[0,:,:]
     temp = np.dstack((pred == 0, target == 0))
     TP = sum(sum(np.all(temp,axis=2)))
 
@@ -62,16 +65,24 @@ def cal_metrcis(pred,target):
     f1_score = 2 * recall * precision / (precision + recall)
 
     return (precision, recall, accuracy, f1_score)
-"""
-def store_imgs_and_cal_matrics(self, t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, fn_img):
 
+def store_imgs_and_cal_matrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
+        
+        #move to params
+        dir_img = "/home/elias/sam_dev/SCD/dir_img"
+        resultdir  = "/home/elias/sam_dev/SCD/resultdir"
+        print("\n",index,"\n")
+        fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
         w, h = w_r, h_r
         img_save = np.zeros((w * 2, h * 2, 3), dtype=np.uint8)
-        img_save[0:w, 0:h, :] = np.transpose(t0.numpy(), (1, 2, 0)).astype(np.uint8)
-        img_save[0:w, h:h * 2, :] = np.transpose(t1.numpy(), (1, 2, 0)).astype(np.uint8)
-        img_save[w:w * 2, 0:h, :] = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        print("w: ", w)
+        print("mask_gt: ", mask_gt.shape)
+        img_save[0:w, 0:h, :] = np.transpose(t0.numpy()[0], (1, 2, 0)).astype(np.uint8)
+        img_save[0:w, h:h * 2, :] = np.transpose(t1.numpy()[0], (1, 2, 0)).astype(np.uint8)
+        img_save[w:w * 2, 0:h, :] = cv2.cvtColor(mask_gt[0,:,:].astype(np.uint8), cv2.COLOR_GRAY2RGB)
         img_save[w:w * 2, h:h * 2, :] = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-
+        print("w: ", w)
+        print("w_ori: ", w_ori)
         if w != w_ori or h != h_ori:
             img_save = cv2.resize(img_save, (h_ori, w_ori))
 
@@ -81,15 +92,16 @@ def store_imgs_and_cal_matrics(self, t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori
 
         print('Writing' + fn_save + '......')
         cv2.imwrite(fn_save, img_save)
-
+        """
         if set_ is not None:
             f_metrics = open(pjoin(resultdir, "eval_metrics_set{0}(single_image).csv".format(set_)), 'a+')
         else:
             f_metrics = open(pjoin(resultdir, "eval_metrics(single_image).csv"), 'a+')
-        metrics_writer = csv.writer(f_metrics)
+        """
+        #metrics_writer = csv.writer(f_metrics)
         fn = '{0}-{1:08d}'.format(ds,index)
         precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
-        metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
-        f_metrics.close()
+        #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
+        #f_metrics.close()
+        print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
         return (precision, recall, accuracy, f1_score)
-"""
