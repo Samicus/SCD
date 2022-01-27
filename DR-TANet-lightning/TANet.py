@@ -73,10 +73,10 @@ class TANet(pl.LightningModule):
         
         t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
         img_count = len(mask_b.cpu())
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",w_r_b,"n\n")
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",mask_b.shape,"n\n")
         index = batch_idx
-        t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b.numpy(), t1_b.numpy(), mask_b.numpy(), w_ori_b.item(), h_ori_b.item(), w_r_b.item(), h_r_b.item()
-        input = torch.from_numpy(np.concatenate((t0, t1),axis=0)).contiguous()
+        t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b, t1_b, mask_b, w_ori_b.item(), h_ori_b.item(), w_r_b.item(), h_r_b.item()
+        input = torch.from_numpy(np.concatenate((t0.numpy(), t1.numpy()),axis=0)).contiguous()
         input = input.view(1,-1,w_r,h_r)
         #input = input.cuda()
         output= self(input)
