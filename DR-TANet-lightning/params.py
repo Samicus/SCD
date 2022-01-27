@@ -5,7 +5,7 @@ if CONFIG == 'PCD':
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
     CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
-    BATCH_SIZE = 16
+    BATCH_SIZE = 1
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1

@@ -8,10 +8,9 @@ from torchmetrics.functional import jaccard_index, precision_recall, f1_score
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, set_):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
         self.len_train_loader = len_train_loader
-        self.set_ = set_
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -59,7 +58,7 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
       
-        criterion = self.get_criterion(
+        criterion = self.get_criterion()
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
         val_loss = criterion(outputs_val, mask_val[:, 0])

@@ -1,12 +1,6 @@
 from TANet import TANet
-from DataModules import PCD, VLCmuCdDataModule
 from pytorch_lightning import Trainer
-from params import encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, MAX_EPOCHS, CHECKPOINT_DIR, config
-from os.path import join as pjoin
-from aim.pytorch_lightning import AimLogger
-import argparse
-from datetime import datetime
-
+from DataModules import PCDdataModule
 
 
 for set_nr in range(2):
@@ -16,7 +10,7 @@ for set_nr in range(2):
                             map_location=None,
                             )    
     trainer = Trainer()
-    trainer.test(model, PCD(0))
+    trainer.test(model, PCDdataModule(set_nr))
 
 
 

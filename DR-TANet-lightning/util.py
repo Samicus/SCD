@@ -1,10 +1,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-#from params import dir_img, resultdir
 import os
 import cv2
-import csv
 from os.path import join as pjoin
 
 __all__ = ['Upsample', 'upsample']
