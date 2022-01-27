@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss#, cal_metrcis, store_imgs_and_cal_matrics
+from util import upsample, criterion_CEloss
 from TANet_element import *
-import pytorch_lightning as pl
-from params import MAX_EPOCHS, store_imgs
-import torch.nn.functional as F
-import numpy as np
+from pytorch_lightning import LightningModule
+from params import MAX_EPOCHS
 from torchmetrics.functional import jaccard_index, precision_recall, f1_score
 
-class TANet(pl.LightningModule):
+class TANet(LightningModule):
 
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
@@ -40,8 +38,7 @@ class TANet(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())
+        criterion = self.get_criterion()
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         loss = criterion(output_train, mask_train[:, 0])
@@ -50,8 +47,8 @@ class TANet(pl.LightningModule):
         return loss
     
     def test_step(self, batch, batch_idx):
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())
+        
+        criterion = self.get_criterion()
         inputs_test, mask_test = batch
         outputs_test = self(inputs_test)
         test_loss = criterion(outputs_test, mask_test[:, 0])
@@ -60,8 +57,8 @@ class TANet(pl.LightningModule):
         return {"test loss" : test_loss}
     
     def validation_step(self, batch, batch_idx):
-        weight = torch.ones(2)
-        criterion = criterion_CEloss(weight.cuda())
+        
+        criterion = self.get_criterion()
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
         val_loss = criterion(outputs_val, mask_val[:, 0])
@@ -91,3 +88,12 @@ class TANet(pl.LightningModule):
         # If the selected scheduler is a ReduceLROnPlateau scheduler.
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
+            
+    def get_criterion(self):
+        # To allow for both CPU and GPU runtime
+        weight = torch.ones(2)
+        try:
+            criterion = criterion_CEloss(weight.cuda())
+        except RuntimeError:
+            criterion = criterion_CEloss()
+        return criterion

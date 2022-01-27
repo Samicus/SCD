@@ -1,6 +1,6 @@
-CONFIG = 1
+CONFIG = 'PCD'
 
-if CONFIG == 1:
+if CONFIG == 'PCD':
     MAX_EPOCHS = 100
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
@@ -16,7 +16,7 @@ if CONFIG == 1:
     refinement = True
     store_imgs = True
 
-if CONFIG == 2:
+else:
     MAX_EPOCHS = 20
     NUM_WORKERS = 8
     DATA_DIR = '/home/elias/sam_dev/vl_cmu_cd_binary_mask/'
