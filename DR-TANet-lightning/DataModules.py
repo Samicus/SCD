@@ -25,7 +25,7 @@ class PCD(LightningDataModule):
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=False)
     
-class VLCmuCdDataModule(LightningDataModule):
+class OtherDataModule(LightningDataModule):
     
     
     def train_dataloader(self):

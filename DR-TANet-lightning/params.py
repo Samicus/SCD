@@ -1,9 +1,6 @@
-config = 1
-  
-#dir_img = ...
-#resultdir = ...
-#store_imgs = ...
-if config == 1:
+CONFIG = 1
+
+if CONFIG == 1:
     MAX_EPOCHS = 100
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
@@ -19,7 +16,7 @@ if config == 1:
     refinement = True
     store_imgs = True
 
-if config == 2:
+if CONFIG == 2:
     MAX_EPOCHS = 20
     NUM_WORKERS = 8
     DATA_DIR = '/home/elias/sam_dev/vl_cmu_cd_binary_mask/'
