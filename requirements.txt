@@ -3,3 +3,4 @@ tqdm
 pytorch-lightning
 aim
 torchmetrics
+numpy

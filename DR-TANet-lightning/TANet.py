@@ -1,16 +1,21 @@
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss
+import torchmetrics
+from util import upsample, criterion_CEloss, store_imgs_and_cal_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
-from params import MAX_EPOCHS
+from params import MAX_EPOCHS, BATCH_SIZE
 from torchmetrics.functional import jaccard_index, precision_recall, f1_score
+import numpy as np
+import torch.nn.functional as F
 
 class TANet(LightningModule):
 
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
         self.len_train_loader = len_train_loader
+        self.set_ = 0
+        self.save_hyperparameters()
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -38,30 +43,44 @@ class TANet(LightningModule):
     
     def training_step(self, batch, batch_idx):
         
-        criterion = self.get_criterion()
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        loss = criterion(output_train, mask_train[:, 0])
-        self.log("train loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        train_loss = F.cross_entropy(output_train, mask_train[:, 0])
+        self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
-        return loss
+        return train_loss
     
     def test_step(self, batch, batch_idx):
-        
-        criterion = self.get_criterion()
-        inputs_test, mask_test = batch
-        outputs_test = self(inputs_test)
-        test_loss = criterion(outputs_test, mask_test[:, 0])
-        self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
-        
-        return {"test loss" : test_loss}
-    
+        t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
+
+        for idx in range(BATCH_SIZE):
+            index = BATCH_SIZE * batch_idx + idx
+            t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[idx], t1_b[idx], mask_b[idx], w_ori_b[idx].item(), h_ori_b[idx].item(), w_r_b[idx].item(), h_r_b[idx].item()
+            input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()),axis=0)).contiguous()
+            input = input.view(1,-1,w_r,h_r)
+            input = input.cuda()
+            output= self(input)
+
+            input = input[0].cpu().data
+            img_t0 = input[0:3,:,:]
+            img_t1 = input[3:6,:,:]
+            img_t0 = (img_t0+1)*128
+            img_t1 = (img_t1+1)*128
+            output = output[0].cpu().data
+            #mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
+            mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True,255,0),axis=0)
+            ds = "TSUNAMI"
+                        
+            store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+
     def validation_step(self, batch, batch_idx):
       
-        criterion = self.get_criterion()
+        #criterion = self.get_criterion()
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
-        val_loss = criterion(outputs_val, mask_val[:, 0])
+        #val_loss = criterion(outputs_val, mask_val[:, 0])
+        val_loss = F.cross_entropy(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
         # Precision and recall
@@ -73,7 +92,7 @@ class TANet(LightningModule):
         self.log("IoU", jaccard_index(outputs_val, mask_val[:, 0]), on_epoch=True, logger=True)
         self.log("F1-Score", f1_score(outputs_val, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
         
-        return {"val_loss" : val_loss}
+        return val_loss
 
     def configure_optimizers(self):
         

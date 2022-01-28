@@ -15,7 +15,7 @@ class PCDdataModule(LightningDataModule):
                                           shuffle=True)
       
     def test_dataloader(self):
-        return DataLoader(datasets.PCD(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
+        return DataLoader(datasets.PCDeval(pjoin(DATA_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=False)
 

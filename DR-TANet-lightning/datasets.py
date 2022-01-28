@@ -70,10 +70,10 @@ class PCD(Dataset):
         return self.__getitem__(idx)
 
 
-class pcd_eval(Dataset):
+class PCDeval(Dataset):
 
     def __init__(self, root):
-        super(pcd_eval, self).__init__()
+        super(PCDeval, self).__init__()
         self.img_t0_root = pjoin(root, 't0')
         self.img_t1_root = pjoin(root, 't1')
         self.img_mask_root = pjoin(root, 'mask')
@@ -121,6 +121,7 @@ class pcd_eval(Dataset):
     def get_random_image(self):
         idx = np.random.randint(0,len(self))
         return self.__getitem__(idx)
+    
 class vl_cmu_cd(Dataset):
 
     def __init__(self, root):

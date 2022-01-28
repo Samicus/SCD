@@ -26,6 +26,7 @@ if parsed_args.cpu:
     NUM_GPU = 0
     
 for set_nr in range(NUM_SETS):
+    
     if parsed_args.aim:
         print("Logging data to AIM")
         aim_logger = AimLogger(
@@ -38,7 +39,7 @@ for set_nr in range(NUM_SETS):
         aim_logger = None
         
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=25, max_epochs=MAX_EPOCHS, 
-                      default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)), 
+                      default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
                       logger=aim_logger)
 
     if CONFIG == 'PCD':

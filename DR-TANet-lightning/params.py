@@ -4,8 +4,10 @@ if CONFIG == 'PCD':
     MAX_EPOCHS = 100
     NUM_WORKERS = 8
     DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-    CHECKPOINT_DIR = '/home/arwin/Documents/checkpoint_dir/'
-    BATCH_SIZE = 1
+    CHECKPOINT_DIR = '/home/arwin/Documents/git/checkpoint_dir/'
+    CHECKPOINT_MODEL_DIR = '/home/arwin/Documents/git/checkpoint_dir/set0/checkpoints/epoch=99-step=2499.ckpt'
+    HPARAMS_DIR = '/home/arwin/Documents/git/SCD/lightning_logs/version_0/hparams.yaml'
+    BATCH_SIZE = 4
     SET_NUMBER = 0
     encoder_arch = 'resnet18'
     local_kernel_size = 1
@@ -33,17 +35,3 @@ else:
     drtam = True
     refinement = True
     store_imgs = False
-
-
-
-    local_kernel_size
-    encoder_arch
-    resultdir
-    dataset 
-    attn_padding = 0
-    attn_groups = 4
-    attn_stride = 1
-    multigpu
-    checkpointdir
-    dir_img 
-    store_imgs 
