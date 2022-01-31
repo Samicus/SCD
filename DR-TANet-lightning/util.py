@@ -10,10 +10,10 @@ __all__ = ['Upsample', 'upsample']
 upsample = lambda x, size: F.interpolate(x, size, mode='bilinear', align_corners=False)
 
 class criterion_CEloss(nn.Module):
-    def __init__(self,weight=None):
+    def __init__(self, weight=None):
         super(criterion_CEloss, self).__init__()
         self.loss = nn.NLLLoss(weight)
-    def forward(self,output,target):
+    def forward(self, output, target):
         return self.loss(F.log_softmax(output, dim=1), target)
 
 class _BNReluConv(nn.Sequential):
@@ -25,7 +25,6 @@ class _BNReluConv(nn.Sequential):
         padding = k // 2  # same conv
         self.add_module('conv', nn.Conv2d(num_maps_in, num_maps_out,
                                           kernel_size=k, padding=padding, bias=bias, dilation=dilation))
-
 
 class Upsample(nn.Module):
     def __init__(self, num_maps_in, skip_maps_in, num_maps_out, use_bn=True, k=3):
@@ -44,10 +43,10 @@ class Upsample(nn.Module):
 
 def cal_metrcis(pred,target):
     temp = np.dstack((pred == 0, target == 0))
-    TP = sum(sum(np.all(temp,axis=2)))
+    TP = sum(sum(np.all(temp, axis=2)))
 
     temp = np.dstack((pred == 0, target == 255))
-    FP = sum(sum(np.all(temp,axis=2)))
+    FP = sum(sum(np.all(temp, axis=2)))
 
     temp = np.dstack((pred == 255, target == 0))
     FN = sum(sum(np.all(temp, axis=2)))

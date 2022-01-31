@@ -55,20 +55,20 @@ class TANet(LightningModule):
         for idx in range(BATCH_SIZE):
             index = BATCH_SIZE * batch_idx + idx
             t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[idx], t1_b[idx], mask_b[idx], w_ori_b[idx].item(), h_ori_b[idx].item(), w_r_b[idx].item(), h_r_b[idx].item()
-            input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()),axis=0)).contiguous()
-            input = input.view(1,-1,w_r,h_r)
+            input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()), axis=0)).contiguous()
+            input = input.view(1, -1, w_r, h_r)
             input = input.cuda()
             output= self(input)
 
             input = input[0].cpu().data
-            img_t0 = input[0:3,:,:]
-            img_t1 = input[3:6,:,:]
-            img_t0 = (img_t0+1)*128
-            img_t1 = (img_t1+1)*128
+            img_t0 = input[0:3, :, :]
+            img_t1 = input[3:6, :, :]
+            img_t0 = (img_t0+1) * 128
+            img_t1 = (img_t1+1) * 128
             output = output[0].cpu().data
-            #mask_pred =F.softmax(output[0:2,:,:],dim=0)[0]*255
-            mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True,255,0),axis=0)
+            #mask_pred = F.softmax(output[0:2, :, :],dim=0)[0]*255
+            mask_pred = np.where(F.softmax(output[0:2, :, :],dim=0)[0]>0.5, 255, 0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             ds = "TSUNAMI"
             
             store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
@@ -107,9 +107,9 @@ class TANet(LightningModule):
             
     def get_loss(self, pred, target):
         # To allow for both CPU and GPU runtime
-        weight = torch.ones(2)
+        weights = torch.ones(2)
         try:
-            criterion = criterion_CEloss(weight.cuda())
+            criterion = criterion_CEloss(weights.cuda())
         except RuntimeError:
-            criterion = criterion_CEloss()
-        return criterion.forward(pred, target)
+            criterion = criterion_CEloss(weights.cpu())
+        return criterion.forward(pred, target)  # loss
