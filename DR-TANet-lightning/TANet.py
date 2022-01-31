@@ -44,7 +44,8 @@ class TANet(LightningModule):
         
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        train_loss = self.get_criterion(output_train, mask_train[:, 0])
+        criterion = self.get_criterion()
+        train_loss = criterion(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss
@@ -77,7 +78,8 @@ class TANet(LightningModule):
       
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
-        val_loss = self.get_criterion(outputs_val, mask_val[:, 0])
+        criterion = self.get_criterion()
+        val_loss = criterion(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
         # Precision and recall
