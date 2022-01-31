@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchmetrics
 from util import upsample, criterion_CEloss, store_imgs_and_cal_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
@@ -45,7 +44,7 @@ class TANet(LightningModule):
         
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        train_loss = F.cross_entropy(output_train, mask_train[:, 0])
+        train_loss = self.get_criterion(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss
@@ -71,16 +70,14 @@ class TANet(LightningModule):
             mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
             mask_gt = np.squeeze(np.where(mask.cpu()==True,255,0),axis=0)
             ds = "TSUNAMI"
-                        
+            
             store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
 
     def validation_step(self, batch, batch_idx):
       
-        #criterion = self.get_criterion()
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
-        #val_loss = criterion(outputs_val, mask_val[:, 0])
-        val_loss = F.cross_entropy(outputs_val, mask_val[:, 0])
+        val_loss = self.get_criterion(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
         # Precision and recall
