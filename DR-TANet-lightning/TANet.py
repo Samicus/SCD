@@ -44,8 +44,7 @@ class TANet(LightningModule):
         
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        criterion = self.get_criterion()
-        train_loss = criterion(output_train, mask_train[:, 0])
+        train_loss = self.get_loss(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss
@@ -78,8 +77,7 @@ class TANet(LightningModule):
       
         inputs_val, mask_val = batch
         outputs_val = self(inputs_val)
-        criterion = self.get_criterion()
-        val_loss = criterion(outputs_val, mask_val[:, 0])
+        val_loss = self.get_loss(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
         # Precision and recall
@@ -107,11 +105,11 @@ class TANet(LightningModule):
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
             
-    def get_criterion(self):
+    def get_loss(self, pred, target):
         # To allow for both CPU and GPU runtime
         weight = torch.ones(2)
         try:
             criterion = criterion_CEloss(weight.cuda())
         except RuntimeError:
             criterion = criterion_CEloss()
-        return criterion
+        return criterion.forward(pred, target)
