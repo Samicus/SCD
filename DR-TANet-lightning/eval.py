@@ -3,6 +3,9 @@ from pytorch_lightning import Trainer
 from DataModules import PCDdataModule
 from params import CHECKPOINT_MODEL_DIR
 
+CHECKPOINT_MODEL_DIR = '/home/arwin/Documents/git/checkpoint_dir/set0/checkpoints/epoch=99-step=2499.ckpt'
+HPARAMS_DIR = '/home/arwin/Documents/git/SCD/lightning_logs/version_0/hparams.yaml'
+
 
 for set_nr in range(1):
     model = TANet.load_from_checkpoint(

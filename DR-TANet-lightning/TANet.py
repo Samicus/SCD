@@ -112,4 +112,4 @@ class TANet(LightningModule):
             criterion = criterion_CEloss(weights.cuda())
         except RuntimeError:
             criterion = criterion_CEloss(weights.cpu())
-        return criterion.forward(pred, target)  # loss
+        return criterion(pred, target)  # loss
