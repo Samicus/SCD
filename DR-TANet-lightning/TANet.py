@@ -49,10 +49,16 @@ class TANet(LightningModule):
         
         return train_loss
     
+    
     def test_step(self, batch, batch_idx):
         t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
+        
+        precision_total = 0
+        recall_total = 0
+        accuracy_total = 0
+        f1_score_total = 0
 
-        for idx in range(BATCH_SIZE):
+        for idx in range(4):
             index = BATCH_SIZE * batch_idx + idx
             t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[idx], t1_b[idx], mask_b[idx], w_ori_b[idx].item(), h_ori_b[idx].item(), w_r_b[idx].item(), h_r_b[idx].item()
             input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()), axis=0)).contiguous()
@@ -67,12 +73,119 @@ class TANet(LightningModule):
             img_t1 = (img_t1+1) * 128
             output = output[0].cpu().data
             #mask_pred = F.softmax(output[0:2, :, :],dim=0)[0]*255
-            mask_pred = np.where(F.softmax(output[0:2, :, :],dim=0)[0]>0.5, 255, 0)
+            mask_pred = np.where(F.softmax(output[0:2, :, :],dim=0)[0]>0.5, 0, 255)
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             ds = "TSUNAMI"
             
-            store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            
+            precision_total += precision
+            recall_total += recall
+            accuracy_total += accuracy
+            f1_score_total += f1_score
+            
+        metrics = {'precision': precision_total/4., 'recall': recall_total/4., 'accuracy': accuracy_total/4., 'f1-score': f1_score_total/4.}
+        self.log_dict(metrics)
+        
+        return metrics
+    
+    """
+    def test_step(self, batch, batch_idx):
+        inputs_test, mask_train = batch
+        outputs_test = self(inputs_test)
+        #test_loss = self.get_loss(outputs_test, mask_train[:, 0])
+        pred = F.softmax(outputs_test[:, 1].cpu())
+        pred[pred > 0.5] = 255
+        pred[pred <= 0.5] = 0
+        target = mask_train[:, 0].cpu()
+        target[target > 0.5] = 255
+        target[target <= 0.5] = 0
+        #test_loss = F.cross_entropy(pred, target)
+        
+        
+        #(precision, recall) = precision_recall(outputs_test, mask_train[:, 0], average='none', num_classes=2, mdmc_average='samplewise')
+        #f1 = f1_score(outputs_test, mask_train[:, 0], average='none', num_classes=2, mdmc_average='samplewise')
+        
+        print('#######################################')
+        
+        temp = np.dstack((pred == 0, target == 0))
+        TP = sum(sum(np.all(temp, axis=1)))
+        print('TP: ' + str(TP))
 
+        temp = np.dstack((pred == 0, target == 255))
+        FP = sum(sum(np.all(temp, axis=1)))
+        print('FP: ' + str(FP))
+
+        temp = np.dstack((pred == 255, target == 0))
+        FN = sum(sum(np.all(temp, axis=1)))
+        print('FN: ' + str(FN))
+
+        temp = np.dstack((pred == 255, target == 255))
+        TN = sum(sum(np.all(temp, axis=1)))
+        print('TN: ' + str(TN))
+        
+        print('#######################################')
+
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        accuracy = (TP + TN) / (TP + FP + FN + TN)
+        f1_score = 2 * recall * precision / (precision + recall)
+        
+        metrics = {'accuracy': accuracy, 'precision': precision, 'recall': recall, 'f1-score': f1_score}
+        self.log_dict(metrics)
+        
+        return metrics
+    """
+    
+    """
+    def validation_step(self, batch, batch_idx):
+        inputs_val, mask_val = batch
+        outputs_val = self(inputs_val)
+        #test_loss = self.get_loss(outputs_test, mask_train[:, 0])
+        pred = F.softmax(outputs_val[:, 1].cpu())
+        pred[pred > 0.5] = 255
+        pred[pred <= 0.5] = 0
+        target = mask_val[:, 0].cpu()
+        target[target > 0.5] = 255
+        target[target <= 0.5] = 0
+        #test_loss = F.cross_entropy(pred, target)
+        
+        
+        #(precision, recall) = precision_recall(outputs_test, mask_train[:, 0], average='none', num_classes=2, mdmc_average='samplewise')
+        #f1 = f1_score(outputs_test, mask_train[:, 0], average='none', num_classes=2, mdmc_average='samplewise')
+        
+        #print('#######################################')
+        
+        temp = np.dstack((pred == 0, target == 0))
+        TP = sum(sum(np.all(temp, axis=1)))
+        #print('TP: ' + str(TP))
+
+        temp = np.dstack((pred == 0, target == 255))
+        FP = sum(sum(np.all(temp, axis=1)))
+        #print('FP: ' + str(FP))
+
+        temp = np.dstack((pred == 255, target == 0))
+        FN = sum(sum(np.all(temp, axis=1)))
+        #print('FN: ' + str(FN))
+
+        temp = np.dstack((pred == 255, target == 255))
+        TN = sum(sum(np.all(temp, axis=1)))
+        #print('TN: ' + str(TN))
+        
+        #print('#######################################')
+
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        accuracy = (TP + TN) / (TP + FP + FN + TN)
+        f1_score = 2 * recall * precision / (precision + recall)
+        
+        metrics = {'accuracy': accuracy, 'precision': precision, 'recall': recall, 'f1-score': f1_score}
+        self.log_dict(metrics)
+        
+        return metrics
+    """
+    
+    """
     def validation_step(self, batch, batch_idx):
       
         inputs_val, mask_val = batch
@@ -80,17 +193,24 @@ class TANet(LightningModule):
         val_loss = self.get_loss(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
+        # We only want values between 0 and 1 in pred
+        pred = F.softmax(outputs_val, dim=1)
+        #print(torch.max(pred))
+        #print(torch.min(pred))
+        #print(done)
+        
         # Precision and recall
-        (precision, recall) = precision_recall(outputs_val, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
+        (precision, recall) = precision_recall(pred, mask_val[:, 0], average='none', num_classes=2, mdmc_average='global')
         self.log("precision", precision, on_epoch=True, logger=True)
         self.log("recall", recall, on_epoch=True, logger=True)
         
         # Intersection over Union and F1-Score
-        self.log("IoU", jaccard_index(outputs_val, mask_val[:, 0]), on_epoch=True, logger=True)
-        self.log("F1-Score", f1_score(outputs_val, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
+        self.log("IoU", jaccard_index(pred, mask_val[:, 0]), on_epoch=True, logger=True)
+        self.log("F1-Score", f1_score(pred, mask_val[:, 0], average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
         
         return val_loss
-
+    """
+    
     def configure_optimizers(self):
         
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))

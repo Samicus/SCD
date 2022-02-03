@@ -4,6 +4,7 @@ import numpy as np
 import os
 import cv2
 from os.path import join as pjoin
+from params import dir_img
 
 __all__ = ['Upsample', 'upsample']
 
@@ -64,8 +65,6 @@ def cal_metrcis(pred,target):
 def store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
         
         #move to params
-        dir_img = "/home/arwin/Documents/git/dir_img"
-        resultdir  = "/home/arwin/Documents/git/result_dir"
         fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
         w, h = w_r, h_r
         img_save = np.zeros((w * 2, h * 2, 3), dtype=np.uint8)
