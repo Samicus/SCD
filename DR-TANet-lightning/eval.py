@@ -2,7 +2,8 @@ from TANet import TANet
 from pytorch_lightning import Trainer
 from DataModules import PCDdataModule
 
-CHECKPOINT_MODEL_DIR = '/home/arwin/Documents/git/SCD/.aim/resnet18_PCD_set0_02_03_2022_13_04_32/d3b38d77731c4abe8b33d381/checkpoints/epoch=199-step=4999.ckpt'
+CHECKPOINT_MODEL_DIR = '/home/arwin/Downloads/epoch=18931-step=246115.ckpt'
+#CHECKPOINT_MODEL_DIR = '/home/arwin/Documents/git/checkpoint_dir/DR-TANet_resnet18_ref/pcd/set0/checkpointdir/00048000.pth'
 HPARAMS_DIR = '/home/arwin/Documents/git/SCD/lightning_logs/version_0/hparams.yaml'
 
 

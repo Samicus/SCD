@@ -1,8 +1,8 @@
 from params import  encoder_arch, local_kernel_size, stride, \
                     padding, groups, drtam, refinement, \
-                    MAX_EPOCHS, CHECKPOINT_DIR, CONFIG
+                    MAX_EPOCHS, CHECKPOINT_DIR, NUM_SETS
 from TANet import TANet
-from DataModules import PCDdataModule, OtherDataModule
+from DataModules import PCDdataModule
 from pytorch_lightning import Trainer
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
@@ -16,10 +16,6 @@ parsed_args = parser.parse_args()
 
 now = datetime.now()
 date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
-
-NUM_SETS = 1
-if CONFIG == 'PCD':
-    NUM_SETS = 2
 
 NUM_GPU = 1
 if parsed_args.cpu:
@@ -42,12 +38,9 @@ for set_nr in range(NUM_SETS):
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
                       logger=aim_logger)
 
-    if CONFIG == 'PCD':
-        data_module = PCDdataModule(set_nr)
-    else:
-        data_module = OtherDataModule()
+    data_module = PCDdataModule(set_nr)
     
     len_train_loader = len(data_module.train_dataloader())
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)
     trainer.fit(model, data_module)
-    trainer.test(ckpt_path="best")
+    trainer.test(ckpt_path="best", datamodule=data_module)

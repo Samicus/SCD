@@ -5,6 +5,7 @@ import os
 import cv2
 from os.path import join as pjoin
 from params import dir_img
+import torch
 
 __all__ = ['Upsample', 'upsample']
 
@@ -15,6 +16,10 @@ class criterion_CEloss(nn.Module):
         super(criterion_CEloss, self).__init__()
         self.loss = nn.NLLLoss(weight)
     def forward(self, output, target):
+        #print("MIN: " + str(torch.min(F.softmax(output, dim=1))))
+        #print("MAX: " + str(torch.max(F.softmax(output, dim=1))))
+        #print("MIN: " + str(torch.min(target)))
+        #print("MAX: " + str(torch.max(target)))
         return self.loss(F.log_softmax(output, dim=1), target)
 
 class _BNReluConv(nn.Sequential):
