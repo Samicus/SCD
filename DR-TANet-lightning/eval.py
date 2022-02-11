@@ -1,15 +1,22 @@
 from TANet import TANet
 from pytorch_lightning import Trainer
 from DataModules import PCDdataModule
+import argparse
 
-CHECKPOINT_MODEL_DIR = '/home/arwin/Downloads/epoch=18931-step=246115.ckpt'
-#CHECKPOINT_MODEL_DIR = '/home/arwin/Documents/git/checkpoint_dir/DR-TANet_resnet18_ref/pcd/set0/checkpointdir/00048000.pth'
-HPARAMS_DIR = '/home/arwin/Documents/git/SCD/lightning_logs/version_0/hparams.yaml'
+""" PATHS
 
+/home/arwin/Downloads/epoch=18931-step=246115.ckpt
+/home/arwin/Documents/git/SCD/.aim/resnet18_PCD_set0_02_10_2022_09_10_12/e1356f0a89894c2eaa5cafb7/checkpoints/epoch=199-step=2399.ckpt
+
+"""
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-i", dest="ckpt", required=True)
+args = parser.parse_args()
 
 for set_nr in range(1):
     model = TANet.load_from_checkpoint(
-                            checkpoint_path=CHECKPOINT_MODEL_DIR,
+                            checkpoint_path=args.ckpt,
                             map_location=None,
                             )
     trainer = Trainer(gpus=1)

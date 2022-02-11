@@ -1,7 +1,7 @@
 from sqlalchemy import false
 import torch
 import torch.nn as nn
-from util import upsample, criterion_CEloss, store_imgs_and_cal_metrics
+from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
@@ -79,7 +79,7 @@ class TANet(LightningModule):
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
             mask_pred = F.softmax(output, dim=0)[0] * 255
-            mask_pred = np.where(F.softmax(output[0:2, :, :],dim=0)[0]>0.5, 255, 0)
+            mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
             
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
             
@@ -96,6 +96,7 @@ class TANet(LightningModule):
         self.log_dict(metrics)
         
         return metrics
+    
     
     def validation_step(self, batch, batch_idx):
         t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
@@ -126,13 +127,19 @@ class TANet(LightningModule):
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
             mask_pred = F.softmax(output, dim=0)[0] * 255
-            mask_pred = np.where(F.softmax(output[0:2, :, :],dim=0)[0]>0.5, 255, 0)
+            mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
+            #mask_pred = F.softmax(output)
+            #mask_pred[mask_pred <= 0.5] = 0
+            #mask_pred[mask_pred > 0.5] = 255
             
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
+            #mask_gt = mask.cpu()
+            #mask_gt[mask_gt <= 0.5] = 255
+            #mask_gt[mask_gt > 0.5] = 0
             
-            ds = "TSUNAMI"
-            
-            (precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            #ds = "TSUNAMI"
+            #(precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
             
             precision_total += precision
             recall_total += recall
@@ -144,41 +151,8 @@ class TANet(LightningModule):
         
         return metrics
     
-    """
-    def test_step(self, batch, batch_idx):
-      
-        inputs_val, mask_val = batch
-        outputs_val = self(inputs_val)
-        
-        # We only want values between 0 and 1 in pred
-        pred = F.softmax(outputs_val, dim=1)
-        pred = outputs_val
-        pred[pred <= 0.5] = 1
-        pred[pred > 0.5] = 0
-        target = mask_val[:, 0]
-        #print(target)
-        #exit()
-        #target[target == 1] = 0
-        #target[target == 0] = 1
-        #print(torch.max(pred))
-        #print(torch.min(pred))
-        #print(done)
-        
-        # loss
-        test_loss = self.get_loss(outputs_val, mask_val[:, 0])
-        self.log("test loss", test_loss, on_epoch=True, prog_bar=True, logger=True)
-        
-        # Precision and recall
-        (precision, recall) = precision_recall(pred, target, average='none', num_classes=2, mdmc_average='global')
-        self.log("precision", precision, on_epoch=True, logger=True)
-        self.log("recall", recall, on_epoch=True, logger=True)
-        
-        # Intersection over Union and F1-Score
-        self.log("IoU", jaccard_index(pred, target), on_epoch=True, logger=True)
-        self.log("F1-Score", f1_score(pred, target, average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
-        
-        return test_loss
     
+    """
     def validation_step(self, batch, batch_idx):
       
         inputs_val, mask_val = batch
@@ -186,11 +160,13 @@ class TANet(LightningModule):
         val_loss = self.get_loss(outputs_val, mask_val[:, 0])
         self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
         
-        # We only want values between 0 and 1 in pred
         pred = F.softmax(outputs_val, dim=1)
+        pred[pred <= 0.5] = 0
+        pred[pred > 0.5] = 255
+        
         target = mask_val[:, 0]
-        target[target <= 0.5] = 0
-        target[target > 0.5] = 255
+        target[target <= 0.5] = 255
+        target[target > 0.5] = 0
         #print(torch.max(pred))
         #print(torch.min(pred))
         #print(done)

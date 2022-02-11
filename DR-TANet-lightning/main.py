@@ -26,7 +26,7 @@ for set_nr in range(NUM_SETS):
     if parsed_args.aim:
         print("Logging data to AIM")
         aim_logger = AimLogger(
-        experiment='resnet18_PCD_set{}_{}'.format(set_nr, date_time),
+        experiment='{}_PCD_set{}_{}'.format(encoder_arch, set_nr, date_time),
         train_metric_prefix='train_',
         val_metric_prefix='val_',
         test_metric_prefix='test_'

@@ -1,3 +1,4 @@
+from tabnanny import check
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -47,7 +48,7 @@ class Upsample(nn.Module):
         x = self.blend_conv.forward(x)
         return x
 
-def cal_metrcis(pred,target):
+def cal_metrics(pred,target):
     temp = np.dstack((pred == 0, target == 0))
     TP = sum(sum(np.all(temp, axis=2)))
 
@@ -64,6 +65,13 @@ def cal_metrcis(pred,target):
     recall = TP / (TP + FN)
     accuracy = (TP + TN) / (TP + FP + FN + TN)
     f1_score = 2 * recall * precision / (precision + recall)
+    
+    check_nan = np.sum([precision, recall, accuracy, f1_score])
+    if np.isnan(check_nan):
+        precision = 0
+        recall = 0
+        accuracy = 0
+        f1_score = 0
 
     return (precision, recall, accuracy, f1_score)
 
@@ -93,7 +101,7 @@ def store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_or
         """
         #metrics_writer = csv.writer(f_metrics)
         fn = '{0}-{1:08d}'.format(ds,index)
-        precision, recall, accuracy, f1_score = cal_metrcis(mask_pred,mask_gt)
+        precision, recall, accuracy, f1_score = cal_metrics(mask_pred,mask_gt)
         #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
         #f_metrics.close()
         print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
