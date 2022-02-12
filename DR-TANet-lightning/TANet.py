@@ -1,11 +1,9 @@
-from sqlalchemy import false
 import torch
 import torch.nn as nn
 from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
-from torchmetrics.functional import jaccard_index, precision_recall, f1_score
 import numpy as np
 import torch.nn.functional as F
 
@@ -78,6 +76,8 @@ class TANet(LightningModule):
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
+            print(F.softmax(output))
+            
             mask_pred = F.softmax(output, dim=0)[0] * 255
             mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
             
@@ -128,17 +128,9 @@ class TANet(LightningModule):
             
             mask_pred = F.softmax(output, dim=0)[0] * 255
             mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
-            #mask_pred = F.softmax(output)
-            #mask_pred[mask_pred <= 0.5] = 0
-            #mask_pred[mask_pred > 0.5] = 255
             
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
-            #mask_gt = mask.cpu()
-            #mask_gt[mask_gt <= 0.5] = 255
-            #mask_gt[mask_gt > 0.5] = 0
             
-            #ds = "TSUNAMI"
-            #(precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             (precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
             
             precision_total += precision
@@ -150,38 +142,6 @@ class TANet(LightningModule):
         self.log_dict(metrics)
         
         return metrics
-    
-    
-    """
-    def validation_step(self, batch, batch_idx):
-      
-        inputs_val, mask_val = batch
-        outputs_val = self(inputs_val)
-        val_loss = self.get_loss(outputs_val, mask_val[:, 0])
-        self.log("val loss", val_loss, on_epoch=True, prog_bar=True, logger=True)
-        
-        pred = F.softmax(outputs_val, dim=1)
-        pred[pred <= 0.5] = 0
-        pred[pred > 0.5] = 255
-        
-        target = mask_val[:, 0]
-        target[target <= 0.5] = 255
-        target[target > 0.5] = 0
-        #print(torch.max(pred))
-        #print(torch.min(pred))
-        #print(done)
-        
-        # Precision and recall
-        (precision, recall) = precision_recall(pred, target, average='none', num_classes=2, mdmc_average='global')
-        self.log("precision", precision, on_epoch=True, logger=True)
-        self.log("recall", recall, on_epoch=True, logger=True)
-        
-        # Intersection over Union and F1-Score
-        self.log("IoU", jaccard_index(pred, target), on_epoch=True, logger=True)
-        self.log("F1-Score", f1_score(pred, target, average='none', mdmc_average='global', num_classes=2), on_epoch=True, logger=True)
-        
-        return val_loss
-    """
     
     def configure_optimizers(self):
         

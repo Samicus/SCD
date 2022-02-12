@@ -2,7 +2,9 @@ import os
 from os.path import join as pjoin
 
 dirname = os.path.dirname
-DATA_DIR = pjoin(dirname(dirname(dirname(__file__))), "TSUNAMI")
+PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/combined")
+TSUNAMI_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/TSUNAMI")
+GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/GSV")
 CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
