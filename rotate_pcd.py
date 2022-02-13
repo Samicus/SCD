@@ -50,51 +50,23 @@ bmp_path = pjoin(mask_path, "bmp")
 t0_path = pjoin(TRAIN_PATH, "t0")
 t1_path = pjoin(TRAIN_PATH, "t1")
 
-def rotate_mask():
-    for filepath in glob.glob(pjoin(mask_path, '*.png')):
+operations = [(mask_path,   "*.png",    args["mask"]),
+              (bmp_path,    "*.bmp",    args["bmp"]),
+              (t0_path,     "*.jpg",    args["t0"]),
+              (t1_path,     "*.jpg",    args["t1"])]
+
+def rotate_dir(path, extension):
+    for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
         for angle in np.arange(0, 360, DEGREE_INCREMENT):
             rotated = imutils.rotate(image, angle)
-            filename = filepath.split('/')[-1]  # xxxx.png
-            filename = filename.split('.')[0]   # xxxx
-            filename += "_{}.png".format(angle) # xxxx_angle.png
-            cv2.imwrite(pjoin(mask_path, filename), rotated)
+            filename = filepath.split('/')[-1]                              # xxxx.yyy
+            filename = filename.split('.')[0]                               # xxxx
+            extension_letters = extension.split('.')[-1]                    # yyy
+            filename += "_{}.{}".format(angle, extension_letters)           # xxxx_angle.yyy
+            cv2.imwrite(pjoin(path, filename), rotated)
 
-def rotate_bmp():
-    for filepath in glob.glob(pjoin(bmp_path, '*.bmp')):
-        image = cv2.imread(filepath)
-        for angle in np.arange(0, 360, DEGREE_INCREMENT):
-            rotated = imutils.rotate(image, angle)
-            filename = filepath.split('/')[-1]  # xxxx.bmp
-            filename = filename.split('.')[0]   # xxxx
-            filename += "_{}.bmp".format(angle) # xxxx_angle.bmp
-            cv2.imwrite(pjoin(bmp_path, filename), rotated)
-
-def rotate_t0():
-    for filepath in glob.glob(pjoin(t0_path, '*.jpg')):
-        image = cv2.imread(filepath)
-        for angle in np.arange(0, 360, DEGREE_INCREMENT):
-            rotated = imutils.rotate(image, angle)
-            filename = filepath.split('/')[-1]  # xxxx.jpg
-            filename = filename.split('.')[0]   # xxxx
-            filename += "_{}.jpg".format(angle) # xxxx_angle.jpg
-            cv2.imwrite(pjoin(t0_path, filename), rotated)
-
-def rotate_t1():
-    for filepath in glob.glob(pjoin(t1_path, '*.jpg')):
-        image = cv2.imread(filepath)
-        for angle in np.arange(0, 360, DEGREE_INCREMENT):
-            rotated = imutils.rotate(image, angle)
-            filename = filepath.split('/')[-1]  # xxxx.jpg
-            filename = filename.split('.')[0]   # xxxx
-            filename += "_{}.jpg".format(angle) # xxxx_angle.jpg
-            cv2.imwrite(pjoin(t1_path, filename), rotated)
-
-if args["mask"]:
-    rotate_mask()
-if args["bmp"]:
-    rotate_bmp()
-if args["t0"]:
-    rotate_t0()
-if args["t1"]:
-    rotate_t1()
+for (path, extension, arg) in operations:
+    if arg:
+        print("Performing rotation augmentation in path: {}".format(path))
+        rotate_dir(path, extension)

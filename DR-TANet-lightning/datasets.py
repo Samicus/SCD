@@ -10,7 +10,7 @@ def check_validness(f):
 
 class PCD(Dataset):
 
-    def __init__(self,root):
+    def __init__(self, root):
         super(PCD, self).__init__()
         self.img_t0_root = pjoin(root,'t0')
         self.img_t1_root = pjoin(root,'t1')

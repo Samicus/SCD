@@ -49,6 +49,7 @@ class Upsample(nn.Module):
         return x
 
 def cal_metrics(pred,target):
+
     temp = np.dstack((pred == 0, target == 0))
     TP = sum(sum(np.all(temp, axis=2)))
 

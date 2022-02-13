@@ -6,11 +6,16 @@ from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
 import numpy as np
 import torch.nn.functional as F
+from torchmetrics.functional import jaccard_index, precision, recall, f1_score
 
 class TANet(LightningModule):
 
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
+        
+        weights = torch.ones(2)
+        self.criterion = criterion_CEloss(weights.cuda())
+        
         self.len_train_loader = len_train_loader
         self.set_ = 0
         self.save_hyperparameters()
@@ -43,7 +48,7 @@ class TANet(LightningModule):
         
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        train_loss = self.get_loss(output_train, mask_train[:, 0])
+        train_loss = self.criterion(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss    
@@ -81,7 +86,7 @@ class TANet(LightningModule):
             mask_pred = F.softmax(output, dim=0)[0] * 255
             mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
             
-            mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255), axis=0)
             
             ds = "TSUNAMI"
             
@@ -126,9 +131,10 @@ class TANet(LightningModule):
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
-            mask_pred = F.softmax(output, dim=0)[0] * 255
-            mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
+            #mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
+            #mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255), axis=0)
             
+            mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
             
             (precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
@@ -145,7 +151,7 @@ class TANet(LightningModule):
     
     def configure_optimizers(self):
         
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9,0.999))
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
         lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.global_step)/(float)(MAX_EPOCHS*self.len_train_loader)
         self.model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
         
@@ -156,12 +162,3 @@ class TANet(LightningModule):
         # If the selected scheduler is a ReduceLROnPlateau scheduler.
         if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             self.model_lr_scheduler.step()
-            
-    def get_loss(self, pred, target):
-        # To allow for both CPU and GPU runtime
-        weights = torch.ones(2)
-        try:
-            criterion = criterion_CEloss(weights.cuda())
-        except RuntimeError:
-            criterion = criterion_CEloss(weights.cpu())
-        return criterion(pred, target)  # loss
