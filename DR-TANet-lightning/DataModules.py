@@ -15,7 +15,7 @@ class PCDdataModule(LightningDataModule):
 
 
     def train_dataloader(self):
-        return  DataLoader(self.concatenated_datasets,
+        return  DataLoader(self.GSV_dataset,
                            num_workers=NUM_WORKERS, 
                            batch_size=BATCH_SIZE,
                            shuffle=True)

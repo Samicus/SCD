@@ -22,6 +22,39 @@ class criterion_CEloss(nn.Module):
         #print("MIN: " + str(torch.min(target)))
         #print("MAX: " + str(torch.max(target)))
         return self.loss(F.log_softmax(output, dim=1), target)
+    
+def l1_loss(input, target):
+    """ L1 Loss without reduce flag.
+    Args:
+        input (FloatTensor): Input tensor
+        target (FloatTensor): Output tensor
+    Returns:
+        [FloatTensor]: L1 distance between input and output
+    """
+
+    return torch.mean(torch.abs(input - target))
+    
+class DiceLoss(nn.Module):
+    def __init__(self):
+        super(DiceLoss, self).__init__()
+        self.epsilon = 1
+    
+    def forward(self, predict, target):
+#         target = target.unsqueeze(1)
+#         print(predict.shape,target.shape)
+        assert predict.size() == target.size(), "the size of predict and target must be equal."
+        num = predict.size(0)
+        
+        pre = torch.sigmoid(predict).view(num, -1)
+#         pre = predict.view(num, -1)
+        tar = target.view(num, -1)
+        
+        intersection = (pre * tar).sum(-1).sum()  #鍒╃敤棰勬祴鍊间笌鏍囩鐩镐箻褰撲綔浜ら泦
+        union = (pre + tar).sum(-1).sum()
+        
+        score = 1 - 2 * (intersection + self.epsilon) / (union + self.epsilon)
+        
+        return score
 
 class _BNReluConv(nn.Sequential):
     def __init__(self, num_maps_in, num_maps_out, k=3, batch_norm=True, bn_momentum=0.1, bias=False, dilation=1):
@@ -50,16 +83,16 @@ class Upsample(nn.Module):
 
 def cal_metrics(pred,target):
 
-    temp = np.dstack((pred == 0, target == 0))
+    temp = np.dstack((pred == 255, target == 255))
     TP = sum(sum(np.all(temp, axis=2)))
 
-    temp = np.dstack((pred == 0, target == 255))
+    temp = np.dstack((pred == 255, target == 0))
     FP = sum(sum(np.all(temp, axis=2)))
 
-    temp = np.dstack((pred == 255, target == 0))
+    temp = np.dstack((pred == 0, target == 255))
     FN = sum(sum(np.all(temp, axis=2)))
 
-    temp = np.dstack((pred == 255, target == 255))
+    temp = np.dstack((pred == 0, target == 0))
     TN = sum(sum(np.all(temp, axis=2)))
 
     precision = TP / (TP + FP)

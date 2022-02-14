@@ -81,12 +81,12 @@ class TANet(LightningModule):
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
-            print(F.softmax(output))
             
-            mask_pred = F.softmax(output, dim=0)[0] * 255
-            mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
+            mask_pred = np.where(F.softmax(output[0:2, :, :], dim=0)[0] > 0.5, 0, 255) 
+            print("HERE")
+            print(output.size())
             
-            mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255), axis=0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0), axis=0)
             
             ds = "TSUNAMI"
             
@@ -134,10 +134,12 @@ class TANet(LightningModule):
             #mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
             #mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255), axis=0)
             
-            mask_pred = np.where(F.softmax(output[0:2,:,:],dim=0)[0]>0.5, 255, 0)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255),axis=0)
+            mask_pred = np.where(F.softmax(output[10, :])[0]>0.5, 0, 255)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             
-            (precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
+            #(precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
+            ds = "TSUNAMI"
+            (precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             
             precision_total += precision
             recall_total += recall
