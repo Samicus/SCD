@@ -49,8 +49,8 @@ class TANet(LightningModule):
         train_loss = F.cross_entropy(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
-        return train_loss    
-    
+        return train_loss
+
     def test_step(self, batch, batch_idx):
         t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
         
@@ -130,7 +130,7 @@ class TANet(LightningModule):
             
             #(precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
             ds = "TSUNAMI"
-            (precision, recall, accuracy, f1_score, img_save) = return_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score, img_save, fn_img) = return_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             
             precision_total += precision
             recall_total += recall
@@ -139,7 +139,7 @@ class TANet(LightningModule):
 
             self.logger.experiment.track(
                 Image(img_save, "Prediction"), # Pass image data and/or caption
-                name='pred_{}'.format(idx), # The name of image set
+                name=fn_img, # The name of image set
                 #step=step,   # Step index (optional)
                 #epoch=0,     # Epoch (optional)
                 context={    # Context (optional)

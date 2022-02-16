@@ -159,4 +159,4 @@ def return_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_o
         #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
         #f_metrics.close()
         #print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
-        return (precision, recall, accuracy, f1_score, img_save)
+        return (precision, recall, accuracy, f1_score, img_save, fn_img)
