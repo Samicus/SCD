@@ -46,6 +46,10 @@ class TANet(LightningModule):
         
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
+        #print(inputs_train.size())
+        #print(output_train.size())
+        #print(mask_train.size())
+        #exit()
         train_loss = F.cross_entropy(output_train, mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
@@ -67,7 +71,7 @@ class TANet(LightningModule):
             input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()), axis=0)).contiguous()
             input = input.view(1, -1, w_r, h_r)
             input = input.cuda()
-            output= self(input)
+            output = self(input)
 
             input = input[0].cpu().data
             img_t0 = input[0:3, :, :]
@@ -138,9 +142,9 @@ class TANet(LightningModule):
             f1_score_total += f1_score
 
             self.logger.experiment.track(
-                Image(img_save, "Prediction"), # Pass image data and/or caption
-                name=fn_img, # The name of image set
-                #step=step,   # Step index (optional)
+                Image(img_save, fn_img.split('/')[-1]), # Pass image data and/or caption
+                name="val_batch_{}".format(batch_idx), # The name of image set
+                step=idx,   # Step index (optional)
                 #epoch=0,     # Epoch (optional)
                 context={    # Context (optional)
                     'subset': 'validation',

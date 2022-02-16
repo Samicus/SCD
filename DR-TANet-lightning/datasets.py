@@ -62,7 +62,7 @@ class PCD(Dataset):
         input_ = torch.from_numpy(np.concatenate((img_t0_r_[:, y_l:y_r, x_l:x_r], img_t1_r_[:, y_l:y_r, x_l:x_r]), axis=0))
         mask_ = torch.from_numpy(mask_r_[:, y_l:y_r, x_l:x_r]).long()
         
-        return input_,mask_
+        return input_, mask_
 
     def __len__(self):
         return len(self.filename)
