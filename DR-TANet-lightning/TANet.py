@@ -47,7 +47,7 @@ class TANet(LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         train_loss = F.cross_entropy(output_train, mask_train[:, 0])
-        #self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss    
     
@@ -92,7 +92,7 @@ class TANet(LightningModule):
             f1_score_total += f1_score
             
         metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score_total/img_cnt}
-        #self.log_dict(metrics)
+        self.log_dict(metrics)
         
         return metrics
     
@@ -104,6 +104,7 @@ class TANet(LightningModule):
         recall_total = 0
         accuracy_total = 0
         f1_score_total = 0
+        img_result = 0
         
         img_cnt = len(t0_b)
         
@@ -136,20 +137,21 @@ class TANet(LightningModule):
             recall_total += recall
             accuracy_total += accuracy
             f1_score_total += f1_score
+            img_result += img_save
 
-            self.logger.experiment.track(
-                Image(img_save, "Prediction"), # Pass image data and/or caption
-                name='pred_{}'.format(idx), # The name of image set
+        f1_score = f1_score_total/img_cnt
+        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score}
+        self.log_dict(metrics)
+
+        self.logger.experiment.track(
+                Image(img_result/img_cnt, "Prediction"), # Pass image data and/or caption
+                name='pred'), # The name of image set
                 #step=step,   # Step index (optional)
                 #epoch=0,     # Epoch (optional)
                 context={    # Context (optional)
                     'subset': 'validation',
                 },
             )
-
-        f1_score = f1_score_total/img_cnt
-        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score}
-        #self.log_dict(metrics)
 
         print("F1-Score: {}".format(f1_score))
         
