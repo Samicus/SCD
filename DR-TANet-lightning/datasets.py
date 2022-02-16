@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
 
 def check_validness(f):
-    return any([i in spt(f)[1] for i in ['jpg','png']])
+    return any([i in spt(f)[1] for i in ['jpg','bmp']])
 
 class PCD(Dataset):
 
@@ -23,7 +23,7 @@ class PCD(Dataset):
         fn = self.filename[index]
         fn_t0 = pjoin(self.img_t0_root, fn+'.jpg')
         fn_t1 = pjoin(self.img_t1_root, fn+'.jpg')
-        fn_mask = pjoin(self.img_mask_root, fn+'.png')
+        fn_mask = pjoin(self.img_mask_root, fn+'.bmp')
 
         if os.path.isfile(fn_t0) == False:
             print('Error: File Not Found: ' + fn_t0)
@@ -37,7 +37,9 @@ class PCD(Dataset):
         
         img_t0 = cv2.imread(fn_t0, 1)
         img_t1 = cv2.imread(fn_t1, 1)
-        mask = cv2.imread(fn_mask, 0)
+        
+        # Invert BMP mask
+        mask = 255 - cv2.imread(fn_mask, 0)
 
         w, h, c = img_t0.shape
         r = 286. / min(w, h)
@@ -84,7 +86,7 @@ class PCDeval(Dataset):
         fn = self.filename[index]
         fn_t0 = pjoin(self.img_t0_root, fn + '.jpg')
         fn_t1 = pjoin(self.img_t1_root, fn + '.jpg')
-        fn_mask = pjoin(self.img_mask_root, fn + '.png')
+        fn_mask = pjoin(self.img_mask_root, fn + '.bmp')
 
         if os.path.isfile(fn_t0) == False:
             print('Error: File Not Found: ' + fn_t0)
@@ -98,7 +100,9 @@ class PCDeval(Dataset):
 
         img_t0 = cv2.imread(fn_t0, 1)
         img_t1 = cv2.imread(fn_t1, 1)
-        mask = cv2.imread(fn_mask, 0)
+        
+        # Invert BMP mask
+        mask = 255 - cv2.imread(fn_mask, 0)
 
         w, h, c = img_t0.shape
         w_r = int(256*max(w/256,1))

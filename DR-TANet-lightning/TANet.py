@@ -13,9 +13,6 @@ class TANet(LightningModule):
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
         super(TANet, self).__init__()
         
-        weights = torch.ones(2)
-        self.criterion = criterion_CEloss(weights.cuda())
-        
         self.len_train_loader = len_train_loader
         self.set_ = 0
         self.save_hyperparameters()
@@ -82,7 +79,7 @@ class TANet(LightningModule):
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
             
-            mask_pred = np.where(F.softmax(output[0:2, :, :], dim=0)[0] > 0.5, 0, 255) 
+            mask_pred = np.where(F.softmax(output, dim=0)[0] > 0.5, 0, 255) 
             print("HERE")
             print(output.size())
             
@@ -131,10 +128,7 @@ class TANet(LightningModule):
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
-            #mask_pred = np.where(F.softmax(output, dim=0)[0]>0.5, 255, 0)
-            #mask_gt = np.squeeze(np.where(mask.cpu()==True, 0, 255), axis=0)
-            
-            mask_pred = np.where(F.softmax(output[10, :])[0]>0.5, 0, 255)
+            mask_pred = np.where(F.softmax(output)[0]>0.5, 0, 255)
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             
             #(precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
@@ -152,6 +146,9 @@ class TANet(LightningModule):
         return metrics
     
     def configure_optimizers(self):
+        
+        weights = torch.ones(2)
+        self.criterion = criterion_CEloss(weights.cuda())
         
         optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
         lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.global_step)/(float)(MAX_EPOCHS*self.len_train_loader)
