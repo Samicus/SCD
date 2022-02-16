@@ -95,17 +95,10 @@ def cal_metrics(pred,target):
     temp = np.dstack((pred == 0, target == 0))
     TN = sum(sum(np.all(temp, axis=2)))
 
-    precision = TP / (TP + FP)
-    recall = TP / (TP + FN)
-    accuracy = (TP + TN) / (TP + FP + FN + TN)
-    f1_score = 2 * recall * precision / (precision + recall)
-    
-    check_nan = np.sum([precision, recall, accuracy, f1_score])
-    if np.isnan(check_nan):
-        precision = 0
-        recall = 0
-        accuracy = 0
-        f1_score = 0
+    precision = TP / (TP + FP + 1e-8)
+    recall = TP / (TP + FN + 1e-8)
+    accuracy = (TP + TN) / (TP + FP + FN + TN + 1e-8)
+    f1_score = 2 * recall * precision / (precision + recall + 1e-8)
 
     return (precision, recall, accuracy, f1_score)
 
@@ -138,5 +131,32 @@ def store_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_or
         precision, recall, accuracy, f1_score = cal_metrics(mask_pred,mask_gt)
         #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
         #f_metrics.close()
-        print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
+        #print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
         return (precision, recall, accuracy, f1_score)
+
+def return_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
+        
+        #move to params
+        fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
+        w, h = w_r, h_r
+        img_save = np.zeros((w * 2, h * 2, 3), dtype=np.uint8)
+        img_save[0:w, 0:h, :] = np.transpose(t0.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+        img_save[0:w, h:h * 2, :] = np.transpose(t1.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+        img_save[w:w * 2, 0:h, :] = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        img_save[w:w * 2, h:h * 2, :] = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        if w != w_ori or h != h_ori:
+            img_save = cv2.resize(img_save, (h_ori, w_ori))
+
+        """
+        if set_ is not None:
+            f_metrics = open(pjoin(resultdir, "eval_metrics_set{0}(single_image).csv".format(set_)), 'a+')
+        else:
+            f_metrics = open(pjoin(resultdir, "eval_metrics(single_image).csv"), 'a+')
+        """
+        #metrics_writer = csv.writer(f_metrics)
+        fn = '{0}-{1:08d}'.format(ds,index)
+        precision, recall, accuracy, f1_score = cal_metrics(mask_pred,mask_gt)
+        #metrics_writer.writerow([fn, precision, recall, accuracy, f1_score])
+        #f_metrics.close()
+        #print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
+        return (precision, recall, accuracy, f1_score, img_save)
