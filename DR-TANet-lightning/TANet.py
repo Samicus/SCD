@@ -49,8 +49,10 @@ class TANet(LightningModule):
         #print(inputs_train.size())
         #print(output_train.size())
         #print(mask_train.size())
+        
         #exit()
-        train_loss = F.cross_entropy(output_train, mask_train[:, 0])
+        #train_loss = F.binary_cross_entropy(output_train[:, 0], mask_train[:, 0])
+        train_loss = F.binary_cross_entropy_with_logits(output_train[:, 1], mask_train[:, 0])
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss
