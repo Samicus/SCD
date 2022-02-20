@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics
+from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics, result_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
@@ -8,6 +8,9 @@ import numpy as np
 import torch.nn.functional as F
 from torchmetrics.functional import jaccard_index, precision, recall, f1_score
 from aim import Image
+
+CHANNEL = 0
+NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
@@ -22,8 +25,8 @@ class TANet(LightningModule):
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
         self.attention_module = get_attentionmodule(local_kernel_size, stride, padding, groups, drtam, refinement, channels)
         self.decoder = get_decoder(channels=channels)
-        self.classifier = nn.Conv2d(channels[0], 2, 1, padding=0, stride=1)
-        self.bn = nn.BatchNorm2d(channels[0])
+        self.classifier = nn.Conv2d(channels[CHANNEL], NUM_OUT_CHANNELS, 1, padding=0, stride=1)
+        self.bn = nn.BatchNorm2d(channels[CHANNEL])
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, img):
@@ -43,16 +46,18 @@ class TANet(LightningModule):
         return pred
     
     def training_step(self, batch, batch_idx):
-        
+                
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         #print(inputs_train.size())
         #print(output_train.size())
         #print(mask_train.size())
         
+        #print(torch.max(output_train[:, 0]))
+        #print(torch.min(output_train[:, 0]))
         #exit()
         #train_loss = F.binary_cross_entropy(output_train[:, 0], mask_train[:, 0])
-        train_loss = F.binary_cross_entropy_with_logits(output_train[:, 1], mask_train[:, 0])
+        train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
         
         return train_loss
@@ -130,28 +135,34 @@ class TANet(LightningModule):
             
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
-
-            mask_pred = np.where(F.softmax(output,dim=0)[0]>0.5, 0, 255)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True,255,0),axis=0)
+            
+            activated_output = torch.sigmoid(output)
+            
+            #print(torch.max(activated_output))
+            #print(torch.min(activated_output))
+            #exit()
+            mask_pred = np.where(activated_output[0]>0.5, 255, 0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             
             #(precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
             ds = "TSUNAMI"
-            (precision, recall, accuracy, f1_score, img_save, fn_img) = return_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score, img_save, fn_img) = result_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             
             precision_total += precision
             recall_total += recall
             accuracy_total += accuracy
             f1_score_total += f1_score
-
-            self.logger.experiment.track(
-                Image(img_save, fn_img.split('/')[-1]), # Pass image data and/or caption
-                name="val_batch_{}".format(batch_idx), # The name of image set
-                step=idx,   # Step index (optional)
-                #epoch=0,     # Epoch (optional)
-                context={    # Context (optional)
-                    'subset': 'validation',
-                },
-            )
+            
+            if self.logger:
+                self.logger.experiment.track(
+                    Image(img_save, fn_img.split('/')[-1]), # Pass image data and/or caption
+                    name="val_batch_{}".format(batch_idx), # The name of image set
+                    step=idx,   # Step index (optional)
+                    #epoch=0,     # Epoch (optional)
+                    context={    # Context (optional)
+                        'subset': 'validation',
+                    },
+                )
 
         f1_score = f1_score_total/img_cnt
         metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score}

@@ -8,6 +8,10 @@ class PCDdataModule(LightningDataModule):
     def __init__(self, set_nr):
         self.set_nr = set_nr
         
+        # IMPORTANT FOR LOG NAME
+        self.TRAIN_DATASET_NAME = "TSUNAMI"
+        self.VAL_DATASET_NAME = "TSUNAMI"
+        
         self.TSUNAMI_dataset = datasets.PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
         self.GSV_dataset = datasets.PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "train"))
         self.concatenated_datasets = ConcatDataset([self.TSUNAMI_dataset, self.GSV_dataset])
@@ -18,7 +22,7 @@ class PCDdataModule(LightningDataModule):
         return  DataLoader(self.TSUNAMI_dataset,
                            num_workers=NUM_WORKERS, 
                            batch_size=BATCH_SIZE,
-                           shuffle=True)
+                           shuffle=False)
       
     def test_dataloader(self):
         return DataLoader(datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),

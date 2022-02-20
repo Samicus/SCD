@@ -160,3 +160,26 @@ def return_imgs_and_cal_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_o
         #f_metrics.close()
         #print("Precision: ", precision, " Recall: ", recall, " Accuracy: ", accuracy, " F1_Score: ", f1_score)
         return (precision, recall, accuracy, f1_score, img_save, fn_img)
+    
+def result_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
+    
+    fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
+    w, h = w_r, h_r
+    
+    t0_r = np.transpose(t0.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+    t1_r = np.transpose(t1.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+    
+    mask_target = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+    mask_pred = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+    
+    input_images = np.hstack((t0_r, t1_r))              # Input images side-by-side
+    mask_images = np.hstack((mask_target, mask_pred))   # Prediction and target images side-by-side
+    
+    img_save = np.vstack((input_images, mask_images))   # Stack input and mask horizontally
+    
+    if w != w_ori or h != h_ori:
+            img_save = cv2.resize(img_save, (h_ori, w_ori))
+            
+    precision, recall, accuracy, f1_score = cal_metrics(mask_pred,mask_gt)
+    
+    return (precision, recall, accuracy, f1_score, img_save, fn_img)

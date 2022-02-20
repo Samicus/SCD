@@ -23,11 +23,14 @@ if parsed_args.cpu:
     
 for set_nr in range(NUM_SETS):
     
+    data_module = PCDdataModule(set_nr)
+    
     if parsed_args.aim:
         print("Logging data to AIM")
         aim_logger = AimLogger(
-        experiment='{}_PCD_set{}_{}'.format(encoder_arch, set_nr, date_time),
+        #experiment='{}_PCD_set{}_{}'.format(encoder_arch, set_nr, date_time),
         train_metric_prefix='train_',
+        experiment="train_{}_eval_{}".format(data_module.TRAIN_DATASET_NAME, data_module.VAL_DATASET_NAME),
         val_metric_prefix='val_',
         test_metric_prefix='test_'
         )
@@ -38,10 +41,8 @@ for set_nr in range(NUM_SETS):
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
                       logger=aim_logger
                       )
-
-    data_module = PCDdataModule(set_nr)
     
     len_train_loader = len(data_module.train_dataloader())
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)
     trainer.fit(model, data_module)
-    trainer.test(ckpt_path="best", datamodule=data_module)
+    #trainer.test(ckpt_path="best", datamodule=data_module)
