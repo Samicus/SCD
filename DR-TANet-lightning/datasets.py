@@ -47,6 +47,9 @@ class PCD(Dataset):
         img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
         img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
         mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
+        
+        
+        # AUGMENTATION
 
         img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
         img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
@@ -117,6 +120,57 @@ class PCDeval(Dataset):
         mask_r = np.asarray(mask_r > 128).astype('f').transpose(2, 0, 1)
 
         return img_t0_r, img_t1_r, mask_r, w, h, w_r, h_r
+
+    def __len__(self):
+        return len(self.filename)
+
+    def get_random_image(self):
+        idx = np.random.randint(0,len(self))
+        return self.__getitem__(idx)
+    
+class PCDfull(Dataset):
+
+    def __init__(self, root):
+        super(PCDfull, self).__init__()
+        self.img_t0_root = pjoin(root, 't0')
+        self.img_t1_root = pjoin(root, 't1')
+        self.img_mask_root = pjoin(root, 'mask')
+        self.filename = list(spt(f)[0] for f in os.listdir(self.img_mask_root) if check_validness(f))
+        self.filename.sort()
+
+    def __getitem__(self, index):
+
+        fn = self.filename[index]
+        fn_t0 = pjoin(self.img_t0_root, fn + '.jpg')
+        fn_t1 = pjoin(self.img_t1_root, fn + '.jpg')
+        fn_mask = pjoin(self.img_mask_root, fn + '.bmp')
+
+        if os.path.isfile(fn_t0) == False:
+            print('Error: File Not Found: ' + fn_t0)
+            exit(-1)
+        if os.path.isfile(fn_t1) == False:
+            print('Error: File Not Found: ' + fn_t1)
+            exit(-1)
+        if os.path.isfile(fn_mask) == False:
+            print('Error: File Not Found: ' + fn_mask)
+            exit(-1)
+
+        img_t0 = cv2.imread(fn_t0, 1)
+        img_t1 = cv2.imread(fn_t1, 1)
+        mask = cv2.imread(fn_mask, 0)
+        
+        # Invert BMP mask
+        mask = 255 - mask
+        
+        img_t0 = np.asarray(img_t0).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
+        img_t1 = np.asarray(img_t1).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
+        mask = np.asarray(mask > 128).astype('f').transpose(2, 0, 1)
+
+        input_ = torch.from_numpy(np.concatenate((img_t0, img_t1), axis=0))
+        mask_ = torch.from_numpy(mask)
+        
+        return input_, mask_
+
 
     def __len__(self):
         return len(self.filename)

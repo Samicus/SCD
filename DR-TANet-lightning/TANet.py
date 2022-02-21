@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
-from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics, result_metrics, store_result_metrics
+import torchmetrics
+from util import cal_metrics, upsample, generate_output_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
 import numpy as np
 import torch.nn.functional as F
-from torchmetrics.functional import jaccard_index, precision, recall, f1_score
+from torchmetrics.functional import precision, recall, f1_score, accuracy
 from aim import Image
 import cv2
 from PIL import Image as pil_image
@@ -52,7 +53,7 @@ class TANet(LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         
-        
+        """
         inputs_train_cpu = inputs_train.cpu().numpy()
         if self.logger:
             for idx, input_train in enumerate(inputs_train_cpu):
@@ -70,7 +71,7 @@ class TANet(LightningModule):
                         'subset': 'training',
                     },
                 )
-        
+       """ 
         
         #print(inputs_train.size())
         #print(output_train.size())
@@ -121,10 +122,9 @@ class TANet(LightningModule):
             mask_pred = np.where(activated_output[0]>0.5, 255, 0)
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             
-            
             ds = "TSUNAMI"
             
-            (precision, recall, accuracy, f1_score) = store_result_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score) = generate_output_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index, STORE=True)
             
             precision_total += precision
             recall_total += recall
@@ -145,7 +145,7 @@ class TANet(LightningModule):
         accuracy_total = 0
         f1_score_total = 0
         
-        img_cnt = len(t0_b)
+        img_cnt = len(mask_b)
         
         for idx in range(img_cnt):
             index = BATCH_SIZE * batch_idx + idx
@@ -173,14 +173,15 @@ class TANet(LightningModule):
             mask_pred = np.where(activated_output[0]>0.5, 255, 0)
             mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
             
-            #(precision, recall, accuracy, f1_score) = cal_metrics(mask_pred, mask_gt)
             ds = "TSUNAMI"
-            (precision, recall, accuracy, f1_score, img_save, fn_img) = result_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (img_save, fn_img) = generate_output_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             
-            precision_total += precision
-            recall_total += recall
-            accuracy_total += accuracy
-            f1_score_total += f1_score
+            precision_i, recall_i, accuracy_i, f1_score_i = cal_metrics(mask_pred, mask_gt)
+            
+            precision_total += precision_i
+            recall_total += recall_i
+            accuracy_total += accuracy_i
+            f1_score_total += f1_score_i
             
             if self.logger:
                 self.logger.experiment.track(
@@ -193,13 +194,12 @@ class TANet(LightningModule):
                     },
                 )
 
-        f1_score = f1_score_total/img_cnt
-        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score}
+        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score_total/img_cnt}
         self.log_dict(metrics)
 
-        print("F1-Score: {}".format(f1_score))
-        
         return metrics
+    
+    
     
     def configure_optimizers(self):
         
