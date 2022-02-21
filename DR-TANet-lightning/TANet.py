@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics, result_metrics
+from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics, result_metrics, store_result_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
@@ -8,6 +8,8 @@ import numpy as np
 import torch.nn.functional as F
 from torchmetrics.functional import jaccard_index, precision, recall, f1_score
 from aim import Image
+import cv2
+from PIL import Image as pil_image
 
 CHANNEL = 0
 NUM_OUT_CHANNELS = 1
@@ -49,6 +51,27 @@ class TANet(LightningModule):
                 
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
+        
+        
+        inputs_train_cpu = inputs_train.cpu().numpy()
+        if self.logger:
+            for idx, input_train in enumerate(inputs_train_cpu):
+                #print(np.shape(input_train))
+                input_image = ((input_train.transpose(1, 2, 0) + 1.0) * 128)
+                img_t0 = input_image[0:3, :, :]
+                img_t1 = input_image[3:6, :, :]
+                img_t0 = pil_image.fromarray(img_t0.astype(np.uint8))
+                self.logger.experiment.track(
+                    Image(img_t0, "input_train"), # Pass image data and/or caption
+                    name="train_batch_{}".format(batch_idx), # The name of image set
+                    step=idx,   # Step index (optional)
+                    #epoch=0,     # Epoch (optional)
+                    context={    # Context (optional)
+                        'subset': 'training',
+                    },
+                )
+        
+        
         #print(inputs_train.size())
         #print(output_train.size())
         #print(mask_train.size())
@@ -90,12 +113,18 @@ class TANet(LightningModule):
             #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
             #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
             
-            mask_pred = np.where(F.softmax(output,dim=0)[0]>0.5, 0, 255)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True,255,0),axis=0)
+            activated_output = torch.sigmoid(output)
+            
+            #print(torch.max(activated_output))
+            #print(torch.min(activated_output))
+            #exit()
+            mask_pred = np.where(activated_output[0]>0.5, 255, 0)
+            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
+            
             
             ds = "TSUNAMI"
             
-            (precision, recall, accuracy, f1_score) = store_imgs_and_cal_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
+            (precision, recall, accuracy, f1_score) = store_result_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
             
             precision_total += precision
             recall_total += recall
