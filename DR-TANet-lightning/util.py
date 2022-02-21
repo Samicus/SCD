@@ -2,11 +2,11 @@ from tabnanny import check
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import os
-import cv2
 from os.path import join as pjoin
 from params import dir_img
 import torch
+import cv2
+
 
 __all__ = ['Upsample', 'upsample']
 
@@ -102,7 +102,7 @@ def cal_metrics(pred,target):
 
     return (precision, recall, accuracy, f1_score)
     
-def store_result_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
+def generate_output_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, STORE=False):
     
     fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
     w, h = w_r, h_r
@@ -113,39 +113,15 @@ def store_result_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set
     mask_target = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
     mask_prediction = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
     
-    input_images = np.hstack((t0_r, t1_r))              # Input images side-by-side
-    mask_images = np.hstack((mask_target, mask_prediction))   # Prediction and target images side-by-side
+    input_images = np.hstack((t0_r, t1_r))                      # Input images side-by-side
+    mask_images = np.hstack((mask_target, mask_prediction))     # Prediction and target images side-by-side
     
-    img_save = np.vstack((input_images, mask_images))   # Stack input and mask horizontally
-    
-    cv2.imwrite(fn_img, img_save)
+    img_save = np.vstack((input_images, mask_images))           # Stack input and mask horizontally
     
     if w != w_ori or h != h_ori:
             img_save = cv2.resize(img_save, (h_ori, w_ori))
             
-    precision, recall, accuracy, f1_score = cal_metrics(mask_pred, mask_gt)
-    
-    return (precision, recall, accuracy, f1_score)
-    
-def result_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index):
-    
-    fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
-    w, h = w_r, h_r
-    
-    t0_r = np.transpose(t0.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-    t1_r = np.transpose(t1.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-    
-    mask_target = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-    mask_prediction = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-    
-    input_images = np.hstack((t0_r, t1_r))              # Input images side-by-side
-    mask_images = np.hstack((mask_target, mask_prediction))   # Prediction and target images side-by-side
-    
-    img_save = np.vstack((input_images, mask_images))   # Stack input and mask horizontally
-    
-    if w != w_ori or h != h_ori:
-            img_save = cv2.resize(img_save, (h_ori, w_ori))
-            
-    precision, recall, accuracy, f1_score = cal_metrics(mask_pred, mask_gt)
-    
-    return (precision, recall, accuracy, f1_score, img_save, fn_img)
+    if STORE:
+        cv2.imwrite(fn_img, img_save)
+    else:
+        return (img_save, fn_img)

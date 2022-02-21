@@ -1,7 +1,0 @@
-
-DATA_DIR = '/home/arwin/Downloads/TSUNAMI/'
-DATA_DIR = '/home/elias/sam_dev/TSUNAMI/'
-CHECKPOINT_DIR = '/home/elias/sam_dev/Checkpoints/tsunami'
-
-DATA_DIR = '/home/samnehme/Dev/SCD_project/TSUNAMI'
-CHECKPOINT_DIR = '/home/samnehme/Dev/SCD_project/Checkpoints'

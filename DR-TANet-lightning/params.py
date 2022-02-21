@@ -5,6 +5,7 @@ dirname = os.path.dirname
 #PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/combined")
 TSUNAMI_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/TSUNAMI")
 GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/GSV")
+optimized_GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/optimized_GSV")
 CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
@@ -28,6 +29,6 @@ scale = 0.898
 shear = 0.602
 perspective = 0.0
 
-#Augments
-mosaic_aug = True
+# Augments
+mosaic_aug = False
 

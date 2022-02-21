@@ -1,8 +1,8 @@
 from params import  encoder_arch, local_kernel_size, stride, \
                     padding, groups, drtam, refinement, \
                     MAX_EPOCHS, CHECKPOINT_DIR, NUM_SETS
-from TANet import TANet
-from DataModules import PCDdataModule
+from network.TANet import TANet
+from augmentations.DataModules import PCDdataModule
 from pytorch_lightning import Trainer
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
