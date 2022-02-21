@@ -1,4 +1,3 @@
-from operator import truediv
 import os
 from os.path import join as pjoin
 
