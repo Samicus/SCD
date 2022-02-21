@@ -1,3 +1,4 @@
+from operator import truediv
 import os
 from os.path import join as pjoin
 
@@ -21,3 +22,13 @@ groups = 4
 drtam = True
 refinement = True
 store_imgs = True
+
+degrees = 0.373
+translate = 0.245
+scale = 0.898
+shear = 0.602
+perspective = 0.0
+
+#Augments
+mosaic_aug = True
+
