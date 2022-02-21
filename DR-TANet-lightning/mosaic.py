@@ -5,7 +5,6 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-import torchvision
 from params import degrees, translate, shear, scale, perspective
 
 def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,1024)):
@@ -47,7 +46,7 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
     #yc, xc = (int(random.uniform(-x,  x)) for x in mosaic_border)
     indices = [index] + random.choices(indices, k=3)  # 3 additional image indices
     random.shuffle(indices)
-    print(indices)
+    #print(indices)
     for i, index in enumerate(indices):
         # Load image
         
@@ -66,7 +65,7 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
         #img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
         #img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
         #img_mask = cv2.resize(img_mask, (int(resize_factor*w_orig), int(resize_factor*h_orig)))
-        print(index)
+        #print(index)
         h, w, _ = img_t0.shape
         
         # place img in img4
@@ -124,7 +123,7 @@ def random_perspective(im_t0, im_t1, im_mask, degrees=10, translate=.1, scale=.1
     # Rotation and Scale
     R = np.eye(3)
     a = random.uniform(-degrees, degrees)
-    s = random.uniform(1 - scale, 1 + scale)
+    s = random.uniform(1 - scale, 1)
     R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
     # Shear

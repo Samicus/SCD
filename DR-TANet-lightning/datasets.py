@@ -38,25 +38,24 @@ class PCD(Dataset):
             exit(-1)
         
         if mosaic_aug:
-            img_t0, img_t1, mask = mosaic_augment(index, self.filename, self.img_t0_root, self.img_t1_root, self.img_mask_root, img_shape=(224,1024))
+            img_t0, img_t1, mask = mosaic_augment(index, self.filename, self.img_t0_root, self.img_t1_root, self.img_mask_root, img_shape=(224, 1024))
         else:
             img_t0 = cv2.imread(fn_t0, 1)
             img_t1 = cv2.imread(fn_t1, 1)
         
         # Invert BMP mask
         mask = 255 - cv2.imread(fn_mask, 0)
-        """
+        
         w, h, c = img_t0.shape
-        r = 286. / min(w, h)
+        r = 288. / min(w, h)
         # resize images so that min(w, h) == 256
         img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
         img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
         mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
-        """
-        img_t0 = np.asarray(img_t0).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        img_t1 = np.asarray(img_t1).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        mask = np.asarray(mask>128).astype('f').transpose(2, 0, 1)
-      
+        
+        img_t0 = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
+        img_t1 = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
+        mask = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)
 
         input_ = torch.from_numpy(np.concatenate((img_t0, img_t1), axis=0))
         mask_ = torch.from_numpy(mask)#.long()

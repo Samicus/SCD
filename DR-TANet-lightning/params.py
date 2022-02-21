@@ -12,7 +12,7 @@ dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
 MAX_EPOCHS = 200
 NUM_WORKERS = 8
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 NUM_SETS = 1
 encoder_arch = 'resnet18'
 local_kernel_size = 7

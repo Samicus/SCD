@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from util import cal_metrics, upsample, criterion_CEloss, store_imgs_and_cal_metrics, return_imgs_and_cal_metrics, result_metrics, store_result_metrics
+from util import cal_metrics, upsample, criterion_CEloss, result_metrics, store_result_metrics
 from TANet_element import *
 from pytorch_lightning import LightningModule
 from params import MAX_EPOCHS, BATCH_SIZE
@@ -52,7 +52,7 @@ class TANet(LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         
-        
+        """
         inputs_train_cpu = inputs_train.cpu().numpy()
         if self.logger:
             for idx, input_train in enumerate(inputs_train_cpu):
@@ -70,7 +70,7 @@ class TANet(LightningModule):
                         'subset': 'training',
                     },
                 )
-        
+        """
         
         #print(inputs_train.size())
         #print(output_train.size())
