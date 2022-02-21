@@ -1,0 +1,8 @@
+drtam: true
+encoder_arch: resnet18
+groups: 4
+len_train_loader: 13
+local_kernel_size: 7
+padding: 3
+refinement: true
+stride: 1
