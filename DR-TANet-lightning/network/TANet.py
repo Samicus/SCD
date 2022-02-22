@@ -136,10 +136,15 @@ class TANet(LightningModule):
         
         return metrics
     
+    
     def validation_step(self, batch, batch_idx):
                 
         inputs_val, mask_val = batch
         output_val = self(inputs_val)
+
+        output_val = torch.sigmoid(output_val)
+        output_val[output_val <= 0.5] = 0
+        output_val[output_val > 0.5] = 1
         
         mask_val = mask_val.int()
         
@@ -147,75 +152,42 @@ class TANet(LightningModule):
         recall_val = recall(output_val, mask_val)
         f1_score_val = f1_score(output_val, mask_val)
         accuracy_val = accuracy(output_val, mask_val)
-        
-        metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
-        self.log_dict(metrics)
-        
-        return metrics
-    
-    """
-    def validation_step(self, batch, batch_idx):
-        t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
-        
-        precision_total = 0
-        recall_total = 0
-        accuracy_total = 0
-        f1_score_total = 0
-        
-        img_cnt = len(mask_b)
-        
-        for idx in range(img_cnt):
-            index = BATCH_SIZE * batch_idx + idx
-            t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[idx], t1_b[idx], mask_b[idx], w_ori_b[idx].item(), h_ori_b[idx].item(), w_r_b[idx].item(), h_r_b[idx].item()
-            input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()), axis=0)).contiguous()
-            input = input.view(1, -1, w_r, h_r)
-            input = input.cuda()
-            output= self(input)
 
-            input = input[0].cpu().data
-            img_t0 = input[0:3, :, :]
-            img_t1 = input[3:6, :, :]
-            img_t0 = (img_t0+1) * 128
-            img_t1 = (img_t1+1) * 128
-            output = output[0].cpu().data
-            
-            #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
-            #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
-            
-            activated_output = torch.sigmoid(output)
-            
-            #print(torch.max(activated_output))
-            #print(torch.min(activated_output))
-            #exit()
-            mask_pred = np.where(activated_output[0]>0.5, 255, 0)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
-            
-            ds = "TSUNAMI"
-            (img_save, fn_img) = generate_output_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
-            
-            precision_i, recall_i, accuracy_i, f1_score_i = cal_metrics(mask_pred, mask_gt)
-            
-            precision_total += precision_i
-            recall_total += recall_i
-            accuracy_total += accuracy_i
-            f1_score_total += f1_score_i
-            
-            if self.logger:
+        if self.logger:
+            metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
+            self.log_dict(metrics)
+            for idx, pred in enumerate(output_val):
+
+                # Convert input to image
+                t0 = np.transpose(inputs_val[idx, 0:3].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+                t1 = np.transpose(inputs_val[idx, 3:6].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+
+                # Convert prediction to image
+                pred_img = pred[0].cpu().numpy()
+                pred_img[pred_img == 1] = 255
+                pred_img = cv2.cvtColor(pred_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+
+                # Convert target to image
+                mask_img = mask_val[idx, 0].cpu().numpy()
+                mask_img[mask_img == 1] = 255
+                mask_img = cv2.cvtColor(mask_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+
+                # Stitch together inputs, prediction and target in a final image.
+                input_images = np.hstack((t0, t1))                      # Horizontal stack of inputs t0 and t1.
+                comparison_img = np.hstack((mask_img, pred_img))        # Horizontal stack of prediction and target.
+                whole_img = np.vstack((input_images, comparison_img))   # Vertical stack of inputs, prediction and target.
+
                 self.logger.experiment.track(
-                    Image(img_save, fn_img.split('/')[-1]), # Pass image data and/or caption
-                    name="val_batch_{}".format(batch_idx), # The name of image set
+                    Image(whole_img, "pred_{}".format(idx)), # Pass image data and/or caption
+                    name="val_batch_{}".format(batch_idx),  # The name of image set
                     step=idx,   # Step index (optional)
-                    #epoch=0,     # Epoch (optional)
-                    context={    # Context (optional)
+                    #epoch=0,   # Epoch (optional)
+                    context={   # Context (optional)
                         'subset': 'validation',
                     },
                 )
-
-        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score_total/img_cnt}
-        self.log_dict(metrics)
-
+        
         return metrics
-    """
     
     def configure_optimizers(self):
         
