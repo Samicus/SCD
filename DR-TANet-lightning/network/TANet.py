@@ -52,34 +52,32 @@ class TANet(LightningModule):
                 
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        
+
         """
-        inputs_train_cpu = inputs_train.cpu().numpy()
         if self.logger:
-            for idx, input_train in enumerate(inputs_train_cpu):
-                #print(np.shape(input_train))
-                input_image = ((input_train.transpose(1, 2, 0) + 1.0) * 128)
-                img_t0 = input_image[0:3, :, :]
-                img_t1 = input_image[3:6, :, :]
-                img_t0 = pil_image.fromarray(img_t0.astype(np.uint8))
+
+            for idx, pred in enumerate(output_train):
+
+                # Convert input to image
+                t0 = np.transpose(inputs_train[idx, 0:3].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+                t1 = np.transpose(inputs_train[idx, 3:6].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+                input_images = np.hstack((t0, t1))  # Horizontal stack of inputs t0 and t1.
+
+                # Convert target to image
+                mask_img = mask_train[idx, 0].cpu().numpy()
+                mask_img[mask_img == 1] = 255
+                mask_img = cv2.cvtColor(mask_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+                
                 self.logger.experiment.track(
-                    Image(img_t0, "input_train"), # Pass image data and/or caption
-                    name="train_batch_{}".format(batch_idx), # The name of image set
+                    Image(input_images, "input_{}".format(idx)), # Pass image data and/or caption
+                    name="train_batch_{}".format(batch_idx),  # The name of image set
                     step=idx,   # Step index (optional)
-                    #epoch=0,     # Epoch (optional)
-                    context={    # Context (optional)
+                    #epoch=0,   # Epoch (optional)
+                    context={   # Context (optional)
                         'subset': 'training',
                     },
                 )
         """
-        
-        #print(inputs_train.size())
-        #print(output_train.size())
-        #print(mask_train.size())
-        
-        #print(torch.max(output_train[:, 0]))
-        #print(torch.min(output_train[:, 0]))
-        #exit()
         
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
@@ -153,8 +151,9 @@ class TANet(LightningModule):
         f1_score_val = f1_score(output_val, mask_val)
         accuracy_val = accuracy(output_val, mask_val)
 
+        metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
+
         if self.logger:
-            metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
             self.log_dict(metrics)
             for idx, pred in enumerate(output_val):
 
@@ -164,12 +163,12 @@ class TANet(LightningModule):
 
                 # Convert prediction to image
                 pred_img = pred[0].cpu().numpy()
-                pred_img[pred_img == 1] = 255
+                pred_img = np.where(pred_img == 1, 255, 0)
                 pred_img = cv2.cvtColor(pred_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
 
                 # Convert target to image
-                mask_img = mask_val[idx, 0].cpu().numpy()
-                mask_img[mask_img == 1] = 255
+                mask_img = mask_val[idx].cpu().numpy()
+                mask_img = np.squeeze(np.where(mask_img == 1, 255, 0),axis=0)
                 mask_img = cv2.cvtColor(mask_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
 
                 # Stitch together inputs, prediction and target in a final image.
