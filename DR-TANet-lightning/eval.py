@@ -1,6 +1,6 @@
 from TANet import TANet
 from pytorch_lightning import Trainer
-from DataModules import PCDdataModule
+from data.DataModules import PCDdataModule
 import argparse
 
 """ PATHS
