@@ -1,7 +1,7 @@
 from util import cal_metrics, generate_output_metrics, upsample
 from params import MAX_EPOCHS, BATCH_SIZE
 from network.TANet_element import *
-from torchmetrics.functional import jaccard_index, precision, recall, f1_score
+from torchmetrics.functional import precision, recall, f1_score, accuracy
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
@@ -136,7 +136,24 @@ class TANet(LightningModule):
         
         return metrics
     
+    def validation_step(self, batch, batch_idx):
+                
+        inputs_val, mask_val = batch
+        output_val = self(inputs_val)
+        
+        mask_val = mask_val.int()
+        
+        precision_val = precision(output_val, mask_val)
+        recall_val = recall(output_val, mask_val)
+        f1_score_val = f1_score(output_val, mask_val)
+        accuracy_val = accuracy(output_val, mask_val)
+        
+        metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
+        self.log_dict(metrics)
+        
+        return metrics
     
+    """
     def validation_step(self, batch, batch_idx):
         t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
         
@@ -198,6 +215,7 @@ class TANet(LightningModule):
         self.log_dict(metrics)
 
         return metrics
+    """
     
     def configure_optimizers(self):
         
