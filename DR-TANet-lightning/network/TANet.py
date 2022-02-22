@@ -52,32 +52,6 @@ class TANet(LightningModule):
                 
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-
-        """
-        if self.logger:
-
-            for idx, pred in enumerate(output_train):
-
-                # Convert input to image
-                t0 = np.transpose(inputs_train[idx, 0:3].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-                t1 = np.transpose(inputs_train[idx, 3:6].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-                input_images = np.hstack((t0, t1))  # Horizontal stack of inputs t0 and t1.
-
-                # Convert target to image
-                mask_img = mask_train[idx, 0].cpu().numpy()
-                mask_img[mask_img == 1] = 255
-                mask_img = cv2.cvtColor(mask_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-                
-                self.logger.experiment.track(
-                    Image(input_images, "input_{}".format(idx)), # Pass image data and/or caption
-                    name="train_batch_{}".format(batch_idx),  # The name of image set
-                    step=idx,   # Step index (optional)
-                    #epoch=0,   # Epoch (optional)
-                    context={   # Context (optional)
-                        'subset': 'training',
-                    },
-                )
-        """
         
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
@@ -155,29 +129,27 @@ class TANet(LightningModule):
 
         if self.logger:
             self.log_dict(metrics)
-            for idx, pred in enumerate(output_val):
+            for idx, (inputs, pred, target) in enumerate(zip(inputs_val, output_val, mask_val)):
 
                 # Convert input to image
-                t0 = np.transpose(inputs_val[idx, 0:3].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-                t1 = np.transpose(inputs_val[idx, 3:6].cpu().numpy(), (1, 2, 0)).astype(np.uint8)
+                t0 = ((inputs[0:3] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
+                t1 = ((inputs[3:6] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
 
                 # Convert prediction to image
-                pred_img = pred[0].cpu().numpy()
-                pred_img = np.where(pred_img == 1, 255, 0)
-                pred_img = cv2.cvtColor(pred_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+                pred_img = pred.type(torch.uint8)
+                pred_img[pred_img == 1] = 255
 
                 # Convert target to image
-                mask_img = mask_val[idx].cpu().numpy()
-                mask_img = np.squeeze(np.where(mask_img == 1, 255, 0),axis=0)
-                mask_img = cv2.cvtColor(mask_img.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+                target_img = target.type(torch.uint8)
+                target_img[target_img == 1] = 255
 
                 # Stitch together inputs, prediction and target in a final image.
-                input_images = np.hstack((t0, t1))                      # Horizontal stack of inputs t0 and t1.
-                comparison_img = np.hstack((mask_img, pred_img))        # Horizontal stack of prediction and target.
-                whole_img = np.vstack((input_images, comparison_img))   # Vertical stack of inputs, prediction and target.
+                input_images = torch.cat((t0, t1), 2)                       # Horizontal stack of inputs t0 and t1.
+                comparison_img = torch.cat((target_img, pred_img), 2)       # Horizontal stack of prediction and target.
+                #whole_img = torch.cat((input_images, comparison_img), 2)    # Vertical stack of inputs, prediction and target.
 
                 self.logger.experiment.track(
-                    Image(whole_img, "pred_{}".format(idx)), # Pass image data and/or caption
+                    Image(comparison_img, "pred_{}".format(idx)), # Pass image data and/or caption
                     name="val_batch_{}".format(batch_idx),  # The name of image set
                     step=idx,   # Step index (optional)
                     #epoch=0,   # Epoch (optional)
