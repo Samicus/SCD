@@ -73,7 +73,7 @@ class PCD(Dataset):
 class PCD_eval(Dataset):
 
     def __init__(self, root):
-        super(PCD, self).__init__()
+        super(PCD_eval, self).__init__()
         self.img_t0_root = pjoin(root,'t0')
         self.img_t1_root = pjoin(root,'t1')
         self.img_mask_root = pjoin(root,'mask')
