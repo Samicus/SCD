@@ -23,12 +23,11 @@ drtam = True
 refinement = False
 store_imgs = True
 
-degrees = 0.373
-translate = 0.245
-scale = 0.898
-shear = 0.602
-perspective = 0.0
+
+translate = 0.2
+scale = [0.1,0.6]
 
 # Augments
-mosaic_aug = False
+mosaic_aug = True
+mosaic_th = 0.5
 

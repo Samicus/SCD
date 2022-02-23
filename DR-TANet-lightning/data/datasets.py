@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
-from params import mosaic_aug
+from params import mosaic_aug, mosaic_th
 from augmentations.mosaic import mosaic_augment
 
 def check_validness(f):
@@ -37,7 +37,7 @@ class PCD(Dataset):
             print('Error: File Not Found: ' + fn_mask)
             exit(-1)
         
-        if mosaic_aug:
+        if mosaic_aug and random.random() < mosaic_th:
             img_t0, img_t1, mask = mosaic_augment(index, self.filename, self.img_t0_root, self.img_t1_root, self.img_mask_root, img_shape=(224, 1024))
         else:
             img_t0 = cv2.imread(fn_t0, 1)
