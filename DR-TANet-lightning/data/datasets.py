@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
 from params import mosaic_aug, mosaic_th
 from augmentations.mosaic import mosaic_augment
+import random
 
 def check_validness(f):
     return any([i in spt(f)[1] for i in ['jpg','bmp']])
