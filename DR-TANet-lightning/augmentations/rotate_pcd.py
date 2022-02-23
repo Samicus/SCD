@@ -52,15 +52,25 @@ operations = [(mask_path,   "*.bmp",    args["mask"]),
               (t1_path,     "*.jpg",    args["t1"])]
 
 def rotate_dir(path, extension):
+    
+    BACKGROUND_COLOR = (0, 0, 0)
+    
+    if extension == '*.bmp':
+        BACKGROUND_COLOR = (255, 255, 255)
+    
     for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
+        h, w, _ = image.shape
+        center = (w // 2, h // 2)
         for angle in np.arange(DEGREE_INCREMENT, 360, DEGREE_INCREMENT):
-            rotated = imutils.rotate(image, angle)
+            M = cv2.getRotationMatrix2D(center, angle, 1.0)
+            rotated = cv2.warpAffine(image, M, (w, h), borderMode=cv2.BORDER_CONSTANT, borderValue=BACKGROUND_COLOR)
             filename = filepath.split('/')[-1]                              # xxxx.yyy
             filename = filename.split('.')[0]                               # xxxx
             extension_letters = extension.split('.')[-1]                    # yyy
             filename += "_{}.{}".format(angle, extension_letters)           # xxxx_angle.yyy
             cv2.imwrite(pjoin(path, filename), rotated)
+        
 
 for (path, extension, arg) in operations:
     if arg:
