@@ -6,6 +6,8 @@ from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
+from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from PIL import Image as pil_image
 from aim import Image
 import numpy as np
@@ -163,4 +165,9 @@ class TANet(LightningModule):
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=1e-3)
         scheduler = ReduceLROnPlateau(optimizer, "min")
-        return [optimizer], [scheduler]
+        return {
+            'optimizer': optimizer,
+            'scheduler': scheduler,
+            'monitor': 'val_loss'
+            }
+
