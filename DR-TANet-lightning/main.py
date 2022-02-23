@@ -3,7 +3,7 @@ from params import  encoder_arch, local_kernel_size, stride, \
                     MAX_EPOCHS, CHECKPOINT_DIR, NUM_SETS
 from network.TANet import TANet
 from data.DataModules import PCDdataModule
-from pytorch_lightning import Trainer
+from pytorch_lightning import Trainer, seed_everything
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
@@ -37,9 +37,10 @@ for set_nr in range(NUM_SETS):
     else:
         aim_logger = None
         
+    seed_everything(42, workers=True)   
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger
+                      logger=aim_logger, deterministic=True
                       )
     
     len_train_loader = len(data_module.train_dataloader())
