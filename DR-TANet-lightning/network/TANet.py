@@ -1,7 +1,7 @@
 from util import cal_metrics, generate_output_metrics, upsample
 from params import MAX_EPOCHS, BATCH_SIZE
 from network.TANet_element import *
-from torchmetrics.functional import jaccard_index, precision, recall, f1_score
+from torchmetrics.functional import precision, recall, f1_score, accuracy
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
@@ -52,34 +52,6 @@ class TANet(LightningModule):
                 
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        
-        """
-        inputs_train_cpu = inputs_train.cpu().numpy()
-        if self.logger:
-            for idx, input_train in enumerate(inputs_train_cpu):
-                #print(np.shape(input_train))
-                input_image = ((input_train.transpose(1, 2, 0) + 1.0) * 128)
-                img_t0 = input_image[0:3, :, :]
-                img_t1 = input_image[3:6, :, :]
-                img_t0 = pil_image.fromarray(img_t0.astype(np.uint8))
-                self.logger.experiment.track(
-                    Image(img_t0, "input_train"), # Pass image data and/or caption
-                    name="train_batch_{}".format(batch_idx), # The name of image set
-                    step=idx,   # Step index (optional)
-                    #epoch=0,     # Epoch (optional)
-                    context={    # Context (optional)
-                        'subset': 'training',
-                    },
-                )
-        """
-        
-        #print(inputs_train.size())
-        #print(output_train.size())
-        #print(mask_train.size())
-        
-        #print(torch.max(output_train[:, 0]))
-        #print(torch.min(output_train[:, 0]))
-        #exit()
         
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
@@ -138,65 +110,54 @@ class TANet(LightningModule):
     
     
     def validation_step(self, batch, batch_idx):
-        t0_b, t1_b, mask_b, w_ori_b, h_ori_b, w_r_b, h_r_b = batch
-        
-        precision_total = 0
-        recall_total = 0
-        accuracy_total = 0
-        f1_score_total = 0
-        
-        img_cnt = len(mask_b)
-        
-        for idx in range(img_cnt):
-            index = BATCH_SIZE * batch_idx + idx
-            t0, t1, mask, w_ori, h_ori, w_r, h_r = t0_b[idx], t1_b[idx], mask_b[idx], w_ori_b[idx].item(), h_ori_b[idx].item(), w_r_b[idx].item(), h_r_b[idx].item()
-            input = torch.from_numpy(np.concatenate((t0.cpu(), t1.cpu()), axis=0)).contiguous()
-            input = input.view(1, -1, w_r, h_r)
-            input = input.cuda()
-            output= self(input)
+                
+        inputs_val, mask_val = batch
+        output_val = self(inputs_val)
 
-            input = input[0].cpu().data
-            img_t0 = input[0:3, :, :]
-            img_t1 = input[3:6, :, :]
-            img_t0 = (img_t0+1) * 128
-            img_t1 = (img_t1+1) * 128
-            output = output[0].cpu().data
-            
-            #print("MIN: " + str(torch.min(F.softmax(output, dim=0))))
-            #print("MAX: " + str(torch.max(F.softmax(output, dim=0))))
-            
-            activated_output = torch.sigmoid(output)
-            
-            #print(torch.max(activated_output))
-            #print(torch.min(activated_output))
-            #exit()
-            mask_pred = np.where(activated_output[0]>0.5, 255, 0)
-            mask_gt = np.squeeze(np.where(mask.cpu()==True, 255, 0),axis=0)
-            
-            ds = "TSUNAMI"
-            (img_save, fn_img) = generate_output_metrics(img_t0, img_t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, self.set_, ds, index)
-            
-            precision_i, recall_i, accuracy_i, f1_score_i = cal_metrics(mask_pred, mask_gt)
-            
-            precision_total += precision_i
-            recall_total += recall_i
-            accuracy_total += accuracy_i
-            f1_score_total += f1_score_i
-            
-            if self.logger:
+        output_val = torch.sigmoid(output_val)
+        output_val[output_val <= 0.5] = 0
+        output_val[output_val > 0.5] = 1
+        
+        mask_val = mask_val.int()
+        
+        precision_val = precision(output_val, mask_val)
+        recall_val = recall(output_val, mask_val)
+        f1_score_val = f1_score(output_val, mask_val)
+        accuracy_val = accuracy(output_val, mask_val)
+
+        metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
+
+        if self.logger:
+            self.log_dict(metrics)
+            for idx, (inputs, pred, target) in enumerate(zip(inputs_val, output_val, mask_val)):
+
+                # Convert input to image
+                t0 = ((inputs[0:3] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
+                t1 = ((inputs[3:6] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
+
+                # Convert prediction to image
+                pred_img = pred.type(torch.uint8)
+                pred_img[pred_img == 1] = 255
+
+                # Convert target to image
+                target_img = target.type(torch.uint8)
+                target_img[target_img == 1] = 255
+
+                # Stitch together inputs, prediction and target in a final image.
+                input_images = torch.cat((t0, t1), 2)                       # Horizontal stack of inputs t0 and t1.
+                comparison_img = torch.cat((target_img, pred_img), 2)       # Horizontal stack of prediction and target.
+                #whole_img = torch.cat((input_images, comparison_img), 2)    # Vertical stack of inputs, prediction and target.
+
                 self.logger.experiment.track(
-                    Image(img_save, fn_img.split('/')[-1]), # Pass image data and/or caption
-                    name="val_batch_{}".format(batch_idx), # The name of image set
+                    Image(comparison_img, "pred_{}".format(idx)), # Pass image data and/or caption
+                    name="val_batch_{}".format(batch_idx),  # The name of image set
                     step=idx,   # Step index (optional)
-                    #epoch=0,     # Epoch (optional)
-                    context={    # Context (optional)
+                    #epoch=0,   # Epoch (optional)
+                    context={   # Context (optional)
                         'subset': 'validation',
                     },
                 )
-
-        metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score_total/img_cnt}
-        self.log_dict(metrics)
-
+        
         return metrics
     
     def configure_optimizers(self):

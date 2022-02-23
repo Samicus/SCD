@@ -9,7 +9,7 @@ class PCDdataModule(LightningDataModule):
         self.set_nr = set_nr
         
         # IMPORTANT FOR LOG NAME
-        self.TRAIN_DATASET_NAME = "GSV"
+        self.TRAIN_DATASET_NAME = "TSUNAMI"
         self.VAL_DATASET_NAME = "TSUNAMI"
         
         self.TSUNAMI_dataset = datasets.PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
@@ -20,10 +20,10 @@ class PCDdataModule(LightningDataModule):
 
 
     def train_dataloader(self):
-        return  DataLoader(self.GSV_dataset,
+        return  DataLoader(self.TSUNAMI_dataset,
                            num_workers=NUM_WORKERS, 
                            batch_size=BATCH_SIZE,
-                           shuffle=False)
+                           shuffle=True)
       
     def test_dataloader(self):
         return DataLoader(datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),
@@ -31,6 +31,6 @@ class PCDdataModule(LightningDataModule):
                                           shuffle=False)
 
     def val_dataloader(self):
-        return DataLoader(datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),
+        return DataLoader(datasets.PCD_eval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=False)

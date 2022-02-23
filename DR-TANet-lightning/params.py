@@ -12,7 +12,7 @@ dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
 MAX_EPOCHS = 200
 NUM_WORKERS = 8
-BATCH_SIZE = 1
+BATCH_SIZE = 4
 NUM_SETS = 1
 encoder_arch = 'resnet18'
 local_kernel_size = 7
@@ -20,7 +20,7 @@ stride = 1
 padding = 3
 groups = 4
 drtam = True
-refinement = True
+refinement = False
 store_imgs = True
 
 degrees = 0.373
