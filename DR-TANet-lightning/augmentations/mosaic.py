@@ -5,7 +5,7 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-from params import degrees, translate, shear, scale, perspective
+from params import scale, translate
 
 def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,1024)):
     """
@@ -38,10 +38,10 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
     
     mosaic_border = [-s//2 , -s1//2]
     #yc, xc = (int(random.uniform(-x, 2 * s + x)) for x in mosaic_border)  # mosaic center x, y
-    yc = int(random.uniform(-mosaic_border[0], 2 * s + mosaic_border[0]))
-    xc = int(random.uniform(-mosaic_border[1], 2 * s1 + mosaic_border[1]))
-    #yc = 112
-    #xc = int(1024/2)
+    #yc = int(random.uniform(-mosaic_border[0],  s + mosaic_border[0]))
+    #xc = int(random.uniform(-mosaic_border[1],  s1 + mosaic_border[1]))
+    yc = 224  #int(random.uniform(-20,  s + mosaic_border[0]))
+    xc = 1024 #int(1024/2)
     
     #yc, xc = (int(random.uniform(-x,  x)) for x in mosaic_border)
     indices = [index] + random.choices(indices, k=3)  # 3 additional image indices
@@ -60,12 +60,13 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
         img_t1 =   cv2.imread(fn_t1, 1)
         img_mask = cv2.imread(fn_mask, 0)
 
-        #resize_factor = random.uniform(0.2, 0.7)
-        #h_orig, w_orig, _ = img_t0.shape
-        #img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
-        #img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
-        #img_mask = cv2.resize(img_mask, (int(resize_factor*w_orig), int(resize_factor*h_orig)))
-        #print(index)
+        # scale each image seperately
+        resize_factor = random.uniform(scale[0], scale[1])
+        h_orig, w_orig, _ = img_t0.shape
+        img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
+        img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
+        img_mask = cv2.resize(img_mask, (int(resize_factor*w_orig), int(resize_factor*h_orig)))
+ 
         h, w, _ = img_t0.shape
         
         # place img in img4
@@ -73,9 +74,7 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
             img4_t0 = np.full((s * 2, s1 * 2, img_t0.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
             img4_t1 = np.full((s * 2, s1 * 2, img_t1.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
             img4_mask = np.full((s * 2, s1 * 2), 255, dtype=np.uint8)                   # base image with 4 tiles
-            #img4_t0 = np.full((224, 1024, img_t0.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
-            #img4_t1 = np.full((224, 1024, img_t1.shape[2]), 114, dtype=np.uint8)  # base image with 4 tiles
-            #img4_mask = np.full((244, 1024), 0, dtype=np.uint8)                   # base image with 4 tiles
+
 
             x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
             x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
@@ -94,15 +93,13 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
         img4_mask[y1a:y2a, x1a:x2a] = img_mask[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
 
     
-    #img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp['copy_paste'])
-    img4_t0, img4_t1, img4_mask = random_perspective(img4_t0, img4_t1, img4_mask,degrees=degrees,scale=scale, perspective=perspective, translate=translate, shear=shear, border=mosaic_border)  # border to remove
-    #img4_t0, img4_t1, img4_mask = random_perspective(img4_t0, img4_t1, img4_mask,  border=mosaic_border)#, border=mosaic_border)  # border to remove
+    img4_t0, img4_t1, img4_mask = random_perspective(img4_t0, img4_t1, img4_mask, translate=translate,  border=mosaic_border)#, border=mosaic_border)  # border to remove
     
     
     return img4_t0, img4_t1, img4_mask
 
 
-def random_perspective(im_t0, im_t1, im_mask, degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
+def random_perspective(im_t0, im_t1, im_mask, degrees=0, translate=.2, scale=0, shear=0, perspective=0.0,
                        border=(0, 0)):
     
 
@@ -154,7 +151,7 @@ def random_perspective(im_t0, im_t1, im_mask, degrees=10, translate=.1, scale=.1
 if __name__ == '__main__':
 
     dirname = os.path.dirname
-    root = pjoin(dirname(dirname(dirname(__file__))), "TSUNAMI/set0/train")
+    root = pjoin(dirname(dirname(dirname(dirname(__file__)))), "TSUNAMI/set0/train")
     img_t0_root = pjoin(root,'t0')
     img_t1_root = pjoin(root,'t1')
     img_mask_root = pjoin(root,'mask/bmp')
