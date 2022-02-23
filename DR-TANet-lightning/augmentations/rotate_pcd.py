@@ -14,8 +14,7 @@ Only training data is rotated
 
 PCD        
 ├── train/
-│   ├── mask/       # *.png
-|       ├── bmp/    # *.bmp
+│   ├── mask/       # *.bmp
 │   ├── t0/         # *.jpg
 |   ├── t1/         # *.jpg
 
@@ -25,40 +24,37 @@ python3 rotate_pcd.py -i /path/to/dataset
     
     optional flags for rotating specific data
         --mask
-        --bmp
         --t0
         --t1
 
 """
+
+DEGREE_INCREMENT = 6
 
 # construct the argument parse and parse the arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--dataset", required=True,
 	help="path to the dataset")
 parser.add_argument("--mask", action="store_true")
-parser.add_argument("--bmp", action="store_true")
 parser.add_argument("--t0", action="store_true")
 parser.add_argument("--t1", action="store_true")
 args = vars(parser.parse_args())
 
-pcd_path = args["dataset"]
-DEGREE_INCREMENT = 6
-TRAIN_PATH = pjoin(pcd_path, "train")
+PCD_PATH = args["dataset"]
+TRAIN_PATH = pjoin(PCD_PATH, "train")
 
 mask_path = pjoin(TRAIN_PATH, "mask")
-bmp_path = pjoin(mask_path, "bmp")
 t0_path = pjoin(TRAIN_PATH, "t0")
 t1_path = pjoin(TRAIN_PATH, "t1")
 
-operations = [(mask_path,   "*.png",    args["mask"]),
-              (bmp_path,    "*.bmp",    args["bmp"]),
+operations = [(mask_path,   "*.bmp",    args["mask"]),
               (t0_path,     "*.jpg",    args["t0"]),
               (t1_path,     "*.jpg",    args["t1"])]
 
 def rotate_dir(path, extension):
     for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
-        for angle in np.arange(0, 360, DEGREE_INCREMENT):
+        for angle in np.arange(DEGREE_INCREMENT, 360, DEGREE_INCREMENT):
             rotated = imutils.rotate(image, angle)
             filename = filepath.split('/')[-1]                              # xxxx.yyy
             filename = filename.split('.')[0]                               # xxxx
