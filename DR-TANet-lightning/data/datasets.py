@@ -218,8 +218,8 @@ class PCDcrop(Dataset):
         # Invert BMP mask
         mask = 255 - cv2.imread(fn_mask, 0)
 
-        w, h, c = img_t0.shape
-        r = 286. / min(w, h)
+        h, w, c = img_t0.shape
+        r = 288. / min(w, h)
         # resize images so that min(w, h) == 256
         img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
         img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))

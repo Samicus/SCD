@@ -6,6 +6,8 @@ from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
+from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from PIL import Image as pil_image
 from aim import Image
 import numpy as np
@@ -159,20 +161,13 @@ class TANet(LightningModule):
                 )
         
         return metrics
-    
+        
     def configure_optimizers(self):
-        
-        #weights = torch.ones(2)
-        #self.criterion = criterion_CEloss(weights.cuda())
-        
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
-        lambda_lr = lambda epoch:(float)(MAX_EPOCHS*self.len_train_loader-self.global_step)/(float)(MAX_EPOCHS*self.len_train_loader)
-        self.model_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_lr)
-        
-        return [optimizer], [self.model_lr_scheduler]
+        optimizer = Adam(self.parameters(), lr=1e-3)
+        scheduler = ReduceLROnPlateau(optimizer, "min")
+        return {
+            'optimizer': optimizer,
+            'scheduler': scheduler,
+            'monitor': 'val_loss'
+            }
 
-    def training_epoch_end(self, outputs):
-        
-        # If the selected scheduler is a ReduceLROnPlateau scheduler.
-        if isinstance(self.model_lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            self.model_lr_scheduler.step()
