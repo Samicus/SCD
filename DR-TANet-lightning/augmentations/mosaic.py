@@ -147,7 +147,7 @@ def random_perspective(im_t0, im_t1, im_mask, degrees=0, translate=.2, scale=0, 
 
     return im_t0, im_t1, im_mask
 
-
+# DEBUG
 if __name__ == '__main__':
 
     dirname = os.path.dirname

@@ -1,4 +1,4 @@
-from params import NUM_WORKERS, TSUNAMI_DIR, GSV_DIR, ROT_TSUNAMI_DIR, ROT_GSV_DIR, optimized_GSV_DIR, BATCH_SIZE
+from params import NUM_WORKERS, TSUNAMI_DIR, GSV_DIR, ROT_TSUNAMI_DIR, ROT_GSV_DIR, BATCH_SIZE
 from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader, ConcatDataset

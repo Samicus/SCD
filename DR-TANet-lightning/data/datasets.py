@@ -4,8 +4,9 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
-from params import mosaic_aug, mosaic_th
+from params import mosaic_aug, mosaic_th, random_erase_aug, random_erase_th
 from augmentations.mosaic import mosaic_augment
+from augmentations.random_erase import random_erase_augment
 import random
 
 def check_validness(f):
@@ -38,12 +39,16 @@ class PCD(Dataset):
             print('Error: File Not Found: ' + fn_mask)
             exit(-1)
         
+        # TODO: Integrate mosaic_aug and random_erase_aug into a main augmentation script
         if mosaic_aug and random.random() < mosaic_th:
             img_t0, img_t1, mask = mosaic_augment(index, self.filename, self.img_t0_root, self.img_t1_root, self.img_mask_root, img_shape=(224, 1024))
         else:
             img_t0 = cv2.imread(fn_t0, 1)
             img_t1 = cv2.imread(fn_t1, 1)
             mask = cv2.imread(fn_mask, 0)
+        if random_erase_aug and random.random() < random_erase_th:
+            img_t0, img_t1, mask = random_erase_augment(img_t0, img_t1, mask)
+            
         # Invert BMP mask
         mask = 255 - mask
         
