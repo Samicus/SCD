@@ -56,7 +56,7 @@ class TANet(LightningModule):
         output_train = self(inputs_train)
         
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
-        self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         
         return train_loss
 
@@ -106,7 +106,7 @@ class TANet(LightningModule):
             f1_score_total += f1_score
             
         metrics = {'precision': precision_total/img_cnt, 'recall': recall_total/img_cnt, 'accuracy': accuracy_total/img_cnt, 'f1-score': f1_score_total/img_cnt}
-        self.log_dict(metrics)
+        self.log_dict(metrics, sync_dist=True)
         
         return metrics
     
@@ -130,7 +130,7 @@ class TANet(LightningModule):
         metrics = {'precision': precision_val, 'recall': recall_val, 'accuracy': accuracy_val, 'f1-score': f1_score_val}
 
         if self.logger:
-            self.log_dict(metrics)
+            self.log_dict(metrics, sync_dist=True)
             for idx, (inputs, pred, target) in enumerate(zip(inputs_val, output_val, mask_val)):
 
                 # Convert input to image

@@ -5,7 +5,7 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-from params import scale, translate
+from params import scale, translate, rotation
 
 def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,1024)):
     """
@@ -93,7 +93,7 @@ def mosaic_augment(index, filename, t0_root, t1_root, mask_root, img_shape=(224,
         img4_mask[y1a:y2a, x1a:x2a] = img_mask[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
 
     
-    img4_t0, img4_t1, img4_mask = random_perspective(img4_t0, img4_t1, img4_mask, translate=translate,  border=mosaic_border)#, border=mosaic_border)  # border to remove
+    img4_t0, img4_t1, img4_mask = random_perspective(img4_t0, img4_t1, img4_mask, translate=translate, degrees=rotation,  border=mosaic_border)#, border=mosaic_border)  # border to remove
     
     
     return img4_t0, img4_t1, img4_mask

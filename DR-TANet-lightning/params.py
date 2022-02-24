@@ -12,25 +12,26 @@ ROT_TSUNAMI_DIR = pjoin(PCD_DIR, "rotated_TSUNAMI")
 ROT_GSV_DIR = pjoin(PCD_DIR, "rotated_GSV")
 
 
-MAX_EPOCHS = 200
-NUM_WORKERS = 8
-BATCH_SIZE = 1
+MAX_EPOCHS = 1000
+NUM_WORKERS = 12
+BATCH_SIZE = 8
 NUM_SETS = 1
 encoder_arch = 'resnet18'
 local_kernel_size = 7
 stride = 1
 padding = 3
 groups = 4
-drtam = True
-refinement = True
-store_imgs = True
+drtam = False
+refinement = False
+store_imgs = False
 
 
 # MOSAIC Augmentation
-mosaic_aug = False
-mosaic_th = 0.5
-translate = 0.2
-scale = [0.1,0.6]
+mosaic_aug = True
+mosaic_th = 1.0
+translate = 0.1
+rotation = 180
+scale = [0.1, 1]
 
 # Random Erase Augmentation
 random_erase_aug = False
