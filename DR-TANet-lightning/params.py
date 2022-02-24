@@ -5,6 +5,8 @@ dirname = os.path.dirname
 #PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/combined")
 TSUNAMI_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/TSUNAMI")
 GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/GSV")
+ROT_TSUNAMI_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/rotated_TSUNAMI")
+ROT_GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/rotated_GSV")
 optimized_GSV_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD/optimized_GSV")
 CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
@@ -12,7 +14,7 @@ dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
 MAX_EPOCHS = 200
 NUM_WORKERS = 8
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 NUM_SETS = 1
 encoder_arch = 'resnet18'
 local_kernel_size = 7
@@ -20,7 +22,7 @@ stride = 1
 padding = 3
 groups = 4
 drtam = True
-refinement = False
+refinement = True
 store_imgs = True
 
 degrees = 0.373
