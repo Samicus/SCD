@@ -25,7 +25,7 @@ drtam = True
 refinement = True
 store_imgs = True
 
-
+augment_on = True
 # MOSAIC Augmentation
 mosaic_aug = False
 mosaic_th = 0.5
@@ -35,3 +35,6 @@ scale = [0.1,0.6]
 # Random Erase Augmentation
 random_erase_aug = False
 random_erase_th = 1.0
+
+# Albumentations
+albumentations_config = 1
