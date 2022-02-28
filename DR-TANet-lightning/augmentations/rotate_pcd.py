@@ -7,6 +7,7 @@ import cv2
 from os.path import join as pjoin
 from PIL import Image
 import glob
+import os
 
 """ Required dataset structure
 
@@ -29,7 +30,8 @@ python3 rotate_pcd.py -i /path/to/dataset
 
 """
 
-DEGREE_INCREMENT = 6
+DEGREE_INCREMENT = 15
+NUM_CROPS = 4
 
 # construct the argument parse and parse the arguments
 parser = argparse.ArgumentParser()
@@ -61,16 +63,30 @@ def rotate_dir(path, extension):
     for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
         h, w, _ = image.shape
-        center = (w // 2, h // 2)
-        for angle in np.arange(DEGREE_INCREMENT, 360, DEGREE_INCREMENT):
-            M = cv2.getRotationMatrix2D(center, angle, 1.0)
-            rotated = cv2.warpAffine(image, M, (w, h), borderMode=cv2.BORDER_CONSTANT, borderValue=BACKGROUND_COLOR)
-            filename = filepath.split('/')[-1]                              # xxxx.yyy
-            filename = filename.split('.')[0]                               # xxxx
-            extension_letters = extension.split('.')[-1]                    # yyy
-            filename += "_{}.{}".format(angle, extension_letters)           # xxxx_angle.yyy
-            cv2.imwrite(pjoin(path, filename), rotated)
-        
+        crop_width = int(w / NUM_CROPS)
+        center = (crop_width // 2, h // 2)
+        for angle in np.arange(0, 360, DEGREE_INCREMENT):
+            
+            for idx in range(NUM_CROPS):
+                
+                crop_low = idx * crop_width
+                crop_high = idx * crop_width + crop_width
+                
+                #print(image.shape)
+                #print(image[:, crop_low : crop_high, :].shape)
+                #print(image[:, crop_low : crop_high, :])
+                #exit()
+                
+                M = cv2.getRotationMatrix2D(center, angle, 1.0)
+                rotated = cv2.warpAffine(image[:, crop_low : crop_high, :], M, (crop_width, crop_width), borderMode=cv2.BORDER_CONSTANT, borderValue=BACKGROUND_COLOR)
+                filename = filepath.split('/')[-1]                              # xxxx.yyy
+                filename = filename.split('.')[0]                               # xxxx
+                extension_letters = extension.split('.')[-1]                    # yyy
+                filename += "_{}_{}.{}".format(idx, angle, extension_letters)   # xxxx_angle.yyy
+                output_path = path.replace("PCD", "rotated_PCD")
+                os.makedirs(output_path, exist_ok=True)
+                cv2.imwrite(pjoin(output_path, filename), rotated)
+            
 
 for (path, extension, arg) in operations:
     if arg:
