@@ -37,7 +37,7 @@ if __name__ == '__main__':
     img_t1 = cv2.imread("/home/arwin/Documents/git/PCD/TSUNAMI/set0/test/t0/00000080.jpg", 1)
     img_mask = cv2.imread("/home/arwin/Documents/git/PCD/TSUNAMI/set0/test/mask/00000080.bmp", 0)
     
-    img_t0_erased, img_t1_erased, img_mask_erased = random_erase(img_t0, img_t1, img_mask)
+    img_t0_erased, img_t1_erased, img_mask_erased = random_erase_augment(img_t0, img_t1, img_mask)
     
     # Using cv2.imshow() method 
     # Displaying the image 
