@@ -19,6 +19,23 @@ class DataAugment:
         self.filename = filename
         self.index = None
 
+
+        if albumentations_config == 1: 
+            self.transform = A.Compose([
+            #A.Sharpen(p=1),
+            A.Sharpen(alpha=[1,1], p=1),
+            #A.HorizontalFlip(p=0.5),
+            #A.RandomBrightnessContrast(p=0.2),
+            ])
+        #...  ... ... augments
+        if albumentations_config == 2:
+            self.transform = A.Compose([
+            #A.Sharpen(p=1),
+            A.Sharpen(alpha=[1,1], p=1),
+            #A.HorizontalFlip(p=0.5),
+            #A.RandomBrightnessContrast(p=0.2),
+            ])
+
     def data_augment(self, index):
         """
         albumentation -> random_crop -> mosaic
@@ -228,29 +245,13 @@ class DataAugment:
             self.img_mask_list[i][x_pos_left : x_pos_right, y_pos_down : y_pos_up] = 255
 
     def albumentation_augment(self):
-        # ...  ... ... augments
-        if albumentations_config == 1: 
-            transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
-            ])
-        #...  ... ... augments
-        if albumentations_config == 2:
-            transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
-            ])
 
         for i, (t0_img, t1_img) in enumerate(list(zip(self.img_t0_list, self.img_t1_list))):
                 t0_img = np.array(t0_img)
-                transformed_t0 = transform(image=t0_img)["image"]
+                transformed_t0 = self.transform(image=t0_img)["image"]
 
                 t1_img = np.array(t1_img)
-                transformed_t1 = transform(image=t1_img)["image"]
+                transformed_t1 = self.transform(image=t1_img)["image"]
 
                 self.img_t0_list[i] = transformed_t0
                 self.img_t1_list[i] = transformed_t1
