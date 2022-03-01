@@ -30,7 +30,7 @@ python3 rotate_pcd.py -i /path/to/dataset
 
 """
 
-DEGREE_INCREMENT = 15
+DEGREE_INCREMENT = 24
 NUM_CROPS = 4
 
 # construct the argument parse and parse the arguments
@@ -71,11 +71,6 @@ def rotate_dir(path, extension):
                 
                 crop_low = idx * crop_width
                 crop_high = idx * crop_width + crop_width
-                
-                #print(image.shape)
-                #print(image[:, crop_low : crop_high, :].shape)
-                #print(image[:, crop_low : crop_high, :])
-                #exit()
                 
                 M = cv2.getRotationMatrix2D(center, angle, 1.0)
                 rotated = cv2.warpAffine(image[:, crop_low : crop_high, :], M, (crop_width, crop_width), borderMode=cv2.BORDER_CONSTANT, borderValue=BACKGROUND_COLOR)
