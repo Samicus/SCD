@@ -36,7 +36,7 @@ class DataAugment:
             #A.RandomBrightnessContrast(p=0.2),
             ])
 
-    def data_augment(self, index):
+    def __call__(self, index):
         """
         albumentation -> random_crop -> mosaic
         """

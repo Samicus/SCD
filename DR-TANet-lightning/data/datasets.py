@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.img_mask_root = pjoin(root,'mask')
         self.filename = list(spt(f)[0] for f in os.listdir(self.img_mask_root) if check_validness(f))
         self.filename.sort()
-        self.data_augmenter = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename )
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename )
     def __getitem__(self, index):
         
         fn = self.filename[index]
@@ -41,7 +41,7 @@ class PCD(Dataset):
         
         # TODO: Integrate mosaic_aug and random_erase_aug into a main augmentation script
         if augment_on:
-            img_t0, img_t1, mask = self.data_augmenter.data_augment(index)
+            img_t0, img_t1, mask = self.data_augment(index)
         else:
             img_t0 = cv2.imread(fn_t0, 1)
             img_t1 = cv2.imread(fn_t1, 1)
