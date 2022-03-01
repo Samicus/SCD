@@ -17,15 +17,15 @@ NUM_WORKERS = 8
 BATCH_SIZE = 1
 NUM_SETS = 1
 encoder_arch = 'resnet18'
-local_kernel_size = 7
+local_kernel_size = 3
 stride = 1
-padding = 3
+padding = 1
 groups = 4
-drtam = True
-refinement = True
-store_imgs = True
+drtam = False
+refinement = False
+store_imgs = False
 
-augment_on = True
+augment_on = False
 # MOSAIC Augmentation
 mosaic_aug = False
 mosaic_th = 0.5
@@ -38,3 +38,6 @@ random_erase_th = 1.0
 
 # Albumentations
 albumentations_config = 1
+
+# Rotation
+rotation = False

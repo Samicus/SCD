@@ -100,7 +100,7 @@ def cal_metrics(pred,target):
     accuracy = (TP + TN) / (TP + FP + FN + TN + 1e-8)
     f1_score = 2 * recall * precision / (precision + recall + 1e-8)
 
-    return (precision, recall, accuracy, f1_score)
+    return precision, recall, accuracy, f1_score
     
 def generate_output_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, STORE=False):
     
