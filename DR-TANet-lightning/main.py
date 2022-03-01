@@ -46,4 +46,3 @@ for set_nr in range(NUM_SETS):
     len_train_loader = len(data_module.train_dataloader())
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)
     trainer.fit(model, data_module)
-    #trainer.test(ckpt_path="best", datamodule=data_module)

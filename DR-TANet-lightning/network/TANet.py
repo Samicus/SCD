@@ -49,13 +49,10 @@ class TANet(LightningModule):
         return pred
     
     def training_step(self, batch, batch_idx):
-                
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
-        
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
-        
         return train_loss
     
     def test_step(self, batch, batch_idx):
@@ -91,9 +88,9 @@ class TANet(LightningModule):
         for idx, (inputs, target) in enumerate(zip(inputs, mask)):
             
             # Forward propagation
-            inputs_forward = torch.unsqueeze(inputs, dim=0)
+            inputs_forward = torch.unsqueeze(inputs, dim=0) # (RGB, height, width) --> (1, RGB, height, width)
             pred = self(inputs_forward)
-            pred = torch.squeeze(pred, dim=0)
+            pred = torch.squeeze(pred, dim=0)   # (1, RGB, height, width) --> (RGB, height, width)
             
             # Activation
             pred = torch.sigmoid(pred)
@@ -112,17 +109,17 @@ class TANet(LightningModule):
 
             # Convert prediction to image
             pred_img = pred.type(torch.uint8)
-            pred_img = torch.cat((pred_img, pred_img, pred_img), 0)
-            pred_img[pred_img == 1] = 255
+            pred_img = torch.cat((pred_img, pred_img, pred_img), 0) # Grayscale --> RGB
+            pred_img *= 255     # 1 --> 255
 
             # Convert target to image
             target_img = target.type(torch.uint8)
-            target_img = torch.cat((target_img, target_img, target_img), 0)
-            target_img[target_img == 1] = 255
+            target_img = torch.cat((target_img, target_img, target_img), 0) # Grayscale --> RGB
+            target_img *= 255   # 1 --> 255
 
             # Stitch together inputs, prediction and target in a final image.
-            input_images = torch.cat((t0, t1), 2)                       # Horizontal stack of inputs t0 and t1.
-            mask_images = torch.cat((target_img, pred_img), 2)       # Horizontal stack of prediction and target.
+            input_images = torch.cat((t0, t1), 2)                   # Horizontal stack of inputs t0 and t1.
+            mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
             img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
             
             if LOG_IMG:
@@ -138,9 +135,11 @@ class TANet(LightningModule):
             else:
                 cv2.imwrite(pjoin("dir_img", "pred_{}_batch_{}.png".format(idx, batch_idx)), img_save.cpu().numpy())
                 
-        metrics = {'precision': precision_tot / current_batch_size, 
-                       'recall': recall_tot / current_batch_size, 
-                       'accuracy': accuracy_tot / current_batch_size, 
-                       'f1-score': f1_score_tot / current_batch_size}
+        metrics = {
+            'precision': precision_tot / current_batch_size,
+            'recall': recall_tot / current_batch_size,
+            'accuracy': accuracy_tot / current_batch_size,
+            'f1-score': f1_score_tot / current_batch_size
+            }
         
         return metrics

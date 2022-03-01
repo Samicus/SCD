@@ -59,7 +59,7 @@ class PCDfull(Dataset):
         
         img_t0 = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0  # -- > (RGB, height, width)
         img_t1 = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0  # -- > (RGB, height, width)
-        mask_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)                # -- > (RGB, height, width)
+        mask_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)               # -- > (RGB, height, width)
 
         input_ = np.concatenate((img_t0, img_t1))
         
@@ -113,9 +113,9 @@ class PCDeval(Dataset):
         img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
         mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
 
-        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)
+        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
+        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)                 # -- > (RGB, height, width)
         
         input_r_ = np.concatenate((img_t0_r_, img_t1_r_))
 
@@ -168,9 +168,9 @@ class PCDcrop(Dataset):
         img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
         mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
 
-        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0
-        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)
+        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
+        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)                 # -- > (RGB, height, width)
 
         crop_width = 256
         _, h, w = img_t0_r_.shape
