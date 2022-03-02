@@ -1,14 +1,7 @@
-from TANet import TANet
+from network.TANet import TANet
 from pytorch_lightning import Trainer
 from data.DataModules import PCDdataModule
 import argparse
-
-""" PATHS
-
-/home/arwin/Downloads/epoch=18931-step=246115.ckpt
-/home/arwin/Documents/git/SCD/.aim/resnet18_PCD_set0_02_10_2022_09_10_12/e1356f0a89894c2eaa5cafb7/checkpoints/epoch=199-step=2399.ckpt
-
-"""
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", dest="ckpt", required=True)

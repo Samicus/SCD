@@ -10,14 +10,14 @@ class PCDdataModule(LightningDataModule):
         
         # IMPORTANT FOR LOG NAME
         self.TRAIN_DATASET_NAME = "FULL_TSUNAMI_and_GSV"
-        self.VAL_DATASET_NAME = "TSUNAMI_and_GSV_NO_AUGMENT"
+        self.VAL_DATASET_NAME = "TSUNAMI_and_GSV_ALL_AUGMENTS"
         
         self.TSUNAMI_dataset = datasets.PCDfull(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
         self.GSV_dataset = datasets.PCDfull(pjoin(GSV_DIR, "set{}".format(self.set_nr), "train"))
         self.concatenated_datasets = ConcatDataset([self.TSUNAMI_dataset, self.GSV_dataset])
 
-        self.val_TSUNAMI_dataset = datasets.PCDfull(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"))
-        self.val_GSV_dataset = datasets.PCDfull(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"))
+        self.val_TSUNAMI_dataset = datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"))
+        self.val_GSV_dataset = datasets.PCDeval(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"))
         self.val_concatenated_datasets = ConcatDataset([self.val_TSUNAMI_dataset, self.val_GSV_dataset])
 
         self.rotated_TSUNAMI_dataset = datasets.PCDcrop(pjoin(ROT_TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
