@@ -20,20 +20,14 @@ class DataAugment:
         self.index = None
 
 
-        if albumentations_config == 1: 
-            self.transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
-            ])
+        
+        self.transform1 = A.Compose([
+                A.RandomShadow(p=.5),
+                A.ChannelShuffle(p=.5),
+                ])
         #...  ... ... augments
-        if albumentations_config == 2:
-            self.transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
+        self.transform2 = A.Compose([
+            A.HorizontalFlip(p=1),
             ])
 
     def __call__(self, index):
@@ -192,6 +186,8 @@ class DataAugment:
         # Rotation and Scale
         R = np.eye(3)
         a = random.uniform(-degrees, degrees)
+        if not degrees == 0 and random.random() >= .5:
+            a += 180
         s = random.uniform(1 - scale, 1)
         R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
@@ -246,16 +242,23 @@ class DataAugment:
 
     def albumentation_augment(self):
 
-        for i, (t0_img, t1_img) in enumerate(list(zip(self.img_t0_list, self.img_t1_list))):
+        for i, (t0_img, t1_img, mask_img) in enumerate(list(zip(self.img_t0_list, self.img_t1_list, self.img_mask_list))):
                 t0_img = np.array(t0_img)
-                transformed_t0 = self.transform(image=t0_img)["image"]
-
+                # apply random shadow/channel shuffle randomly for t0 and t1
+                transformed_t0 = self.transform1(image=t0_img)["image"]
                 t1_img = np.array(t1_img)
-                transformed_t1 = self.transform(image=t1_img)["image"]
+                transformed_t1 = self.transform1(image=t1_img)["image"]
+
+                # Horizontal flip on t0,t1,mask
+                if random.random() > .5:
+                    transformed_t0 = self.transform2(image=transformed_t0)["image"]
+                    transformed_t1 = self.transform2(image=transformed_t1)["image"]
+                    transformed_mask = self.transform2(image=mask_img)["image"]
+
+                    self.img_mask_list[i] = transformed_mask
 
                 self.img_t0_list[i] = transformed_t0
                 self.img_t1_list[i] = transformed_t1
-
 
 # DEBUG
 if __name__ == '__main__':
