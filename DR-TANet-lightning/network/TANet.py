@@ -92,19 +92,21 @@ class TANet(LightningModule):
         f1_score_tot = 0
         val_loss = 0
         
-        for idx, (inputs, target) in enumerate(zip(inputs, mask.int())):
+        for idx, (inputs, target) in enumerate(zip(inputs, mask)):
             
             # Forward propagation
             inputs_forward = torch.unsqueeze(inputs, dim=0) # (RGB, height, width) --> (1, RGB, height, width)
             pred = self(inputs_forward)
             pred = torch.squeeze(pred, dim=0)   # (1, RGB, height, width) --> (RGB, height, width)
             
-            val_loss += F.binary_cross_entropy_with_logits(pred, mask[idx])
+            val_loss += F.binary_cross_entropy_with_logits(pred, target)
             
             # Activation
             pred = torch.sigmoid(pred)
             pred[pred <= 0.5] = 0
             pred[pred > 0.5] = 1
+            target[target == 1] = 1
+            target = target.int()
             
             # Calculate metrics
             precision_tot += precision(pred, target)
@@ -113,6 +115,7 @@ class TANet(LightningModule):
             f1_score_tot += f1_score(pred, target)
             
             if LOG_IMG == True or LOG_IMG == None:
+                
                 # Convert input to image
                 t0 = ((inputs[0:3] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
                 t1 = ((inputs[3:6] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
@@ -120,12 +123,12 @@ class TANet(LightningModule):
                 # Convert prediction to image
                 pred_img = pred.type(torch.uint8)
                 pred_img = torch.cat((pred_img, pred_img, pred_img), 0) # Grayscale --> RGB
-                pred_img *= 255     # 1 --> 255
+                pred_img *= 255 # 1 --> 255
 
                 # Convert target to image
                 target_img = target.type(torch.uint8)
                 target_img = torch.cat((target_img, target_img, target_img), 0) # Grayscale --> RGB
-                target_img *= 255   # 1 --> 255
+                target_img *= 255 # 1 --> 255
 
                 # Stitch together inputs, prediction and target in a final image.
                 input_images = torch.cat((t0, t1), 2)                   # Horizontal stack of inputs t0 and t1.
