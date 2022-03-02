@@ -155,7 +155,7 @@ class DataAugment:
         """
         loads current images t0, t1 and mask into lists with size 1
         """
-        fn = self.filename[index]
+        fn = self.filename[self.index]
 
         fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
         fn_t1 =   pjoin(self.t1_root,fn+'.jpg')

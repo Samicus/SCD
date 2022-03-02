@@ -13,9 +13,9 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 
-MAX_EPOCHS = 200
-NUM_WORKERS = 8
-BATCH_SIZE = 2
+MAX_EPOCHS = 100
+NUM_WORKERS = 12
+BATCH_SIZE = 8
 NUM_SETS = 1
 encoder_arch = 'resnet18'
 local_kernel_size = 3

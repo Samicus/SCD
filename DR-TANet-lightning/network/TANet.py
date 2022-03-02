@@ -70,7 +70,7 @@ class TANet(LightningModule):
         scheduler = ReduceLROnPlateau(optimizer, "max")
         return {
             'optimizer': optimizer,
-            'scheduler': scheduler,
+            'lr_scheduler': scheduler,
             'monitor': 'f1-score'
             }
         
