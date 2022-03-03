@@ -8,7 +8,6 @@ import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from aim import Image
-import cv2
 from os.path import join as pjoin
 from params import dir_img
 from torchvision.utils import save_image
@@ -19,12 +18,13 @@ NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, DETERMINISTIC=False):
         super(TANet, self).__init__()
-        
+        self.DETERMINISTIC = DETERMINISTIC
         self.len_train_loader = len_train_loader
         self.set_ = 0
         self.save_hyperparameters()
+        self.automatic_optimization = False
 
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
@@ -51,10 +51,25 @@ class TANet(LightningModule):
         return pred
     
     def training_step(self, batch, batch_idx):
+        
+        opt = self.optimizers()
+        opt.zero_grad()
+        
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
+        
         train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
+        
+        if self.DETERMINISTIC:
+            torch.use_deterministic_algorithms(False)
+            self.manual_backward(train_loss)
+            torch.use_deterministic_algorithms(True)
+        else:
+            self.manual_backward(train_loss)
+        opt.step()
+        
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
+        
         return train_loss
     
     def test_step(self, batch, batch_idx):
