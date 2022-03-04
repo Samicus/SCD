@@ -1,27 +1,29 @@
-from PIL import ImageFilter, Image
+from PIL import Image
 import random
-from torchvision import transforms
 import numpy as np
 import cv2
-import skimage.exposure
-from scipy.ndimage import gaussian_filter
-import pickle
 import os
-import albumentations as A
-from albumentations.pytorch.transforms import ToTensorV2
-
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
 
 
-class CopyPaste(object):
-    ''' Copy paste augumentation:
-        params: 
+class CopyPaste():
+    ''' 
+    Copies, resizes and rotates masked part of a random image and 
+    pastes it on a random section of the input image image 
     '''
 
 
-    def __init__(self, t0_root, t1_root, mask_root, filename, sigma=1, scale=[0.3,0.8], rotation=180):
-        self.sigma = sigma
+    def __init__(self, t0_root, t1_root, mask_root, filename, scale=[0.3,0.8], rotation=180):
+        """
+        params: 
+            t0_root: root directory to t0 images
+            t1_root: root directory to t1 images
+            mask_root: root directory to mask with .bmp files
+            filename: a list of filenames in mask directory
+            scale: scaling of the pasted image randomly between scale[0] and scale[1]
+            rotation: rotation of the pasted image randomly between -rotation and rotation in degrees
+        """
         self.scale = scale
         self.t0_root = t0_root
         self.t1_root = t1_root
@@ -55,19 +57,20 @@ class CopyPaste(object):
         img_t1 = np.asarray(img_t1)
         img_mask = np.asarray(img_mask)
 
+        #Random positions for pasted images
         h_start = np.random.randint(1,h-h_resized-1)
         w_start = np.random.randint(1, w-w_resized-1)
-
         y1, y2 = h_start, h_start + h_resized
         x1, x2 = w_start, w_start + w_resized
 
         binary_mask = 1.0 * (copy_mask > 0)
-        # blur_binary_mask = skimage.exposure.rescale_intensity(blur_binary_mask)
         invert_mask = 1.0 * (np.logical_not(binary_mask).astype(int))
 
+        # expand dimensions of mask to match rgb images
         blur_invert_mask = np.expand_dims(invert_mask, 2)  # Expanding dims to match channels
         blur_binary_mask = np.expand_dims(binary_mask, 2)
-
+        
+        # Paste image
         img_t0[y1:y2, x1:x2] = (copy_t0 * blur_invert_mask) + (img_t0[y1:y2, x1:x2] * blur_binary_mask)
         img_t1[y1:y2, x1:x2] = (copy_t1 * blur_invert_mask) + (img_t1[y1:y2, x1:x2] * blur_binary_mask)
         img_mask[y1:y2, x1:x2] = (copy_mask * invert_mask) + (img_mask[y1:y2, x1:x2] * binary_mask)
@@ -76,6 +79,9 @@ class CopyPaste(object):
 
 
     def rotate_image(self, image, angle):
+        """
+        Rotates an image 
+        """
         image_center = tuple(np.array(image.shape[1::-1]) / 2)
         rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
         rotated_img = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
@@ -83,7 +89,7 @@ class CopyPaste(object):
 
     def load_random_imgs(self):
         """
-        loads current images t0, t1 and mask into lists with size 1
+        returns random images t0, t1 and mask
         """
         nr_images = len(self.filename)
         index = np.random.randint(0, nr_images) 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
     img_t1_root = pjoin(root,'t1')
     img_mask_root = pjoin(root,'mask/bmp')
     filename = list(spt(f)[0] for f in os.listdir(img_mask_root))
-    copy_paste =  CopyPaste(img_t0_root, img_t1_root, img_mask_root, filename, sigma=1, scale=[0.1,1])
+    copy_paste =  CopyPaste(img_t0_root, img_t1_root, img_mask_root, filename, scale=[0.1,1])
     
     index = 11
     fn = filename[index]

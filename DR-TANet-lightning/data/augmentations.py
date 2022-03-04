@@ -5,7 +5,7 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-from params import scale, translate, rotation, mosaic_aug, random_erase_aug, albumentations_config
+from params import scale, translate, rotation, mosaic_aug, random_erase_aug, albumentations_config, copy_paste_aug, copy_paste_scale, copy_paste_rotation
 import albumentations as A
 
 
@@ -19,21 +19,15 @@ class DataAugment:
         self.filename = filename
         self.index = None
 
-
-        if albumentations_config == 1: 
-            self.transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
-            ])
-        #...  ... ... augments
-        if albumentations_config == 2:
-            self.transform = A.Compose([
-            #A.Sharpen(p=1),
-            A.Sharpen(alpha=[1,1], p=1),
-            #A.HorizontalFlip(p=0.5),
-            #A.RandomBrightnessContrast(p=0.2),
+        self.copy_paste = CopyPaste(t0_root, t1_root, mask_root, filename, scale=[copy_paste_scale[0],copy_paste_scale[1]], rotation=copy_paste_rotation)
+        
+        self.transform1 = A.Compose([
+                A.RandomShadow(p=.5),
+                A.ChannelShuffle(p=.5),
+                ])
+        
+        self.transform2 = A.Compose([
+            A.HorizontalFlip(p=1),
             ])
 
     def __call__(self, index):
@@ -49,20 +43,30 @@ class DataAugment:
         else:
             self.load_current_img()
 
+        if copy_paste_aug:
+            self.apply_copy_paste()
         # albumentations_config = 0 -> no albumentation augment
         if not albumentations_config == 0:
             # Augments data with albumentations, Which augments to be applied is chosen in params.py by albumentations_config
             self.albumentation_augment()
-
+        # Apply random erase
         if random_erase_aug:
             self.random_erase_augment(WIDTH_DIV=2.0, HEIGHT_DIV=2.0)
-    
+        #apply mosaic
         if mosaic_aug:
             img_t0, img_t1, img_mask = self.mosaic_augment()
         else:
             img_t0, img_t1, img_mask = self.img_t0_list[0], self.img_t1_list[0], self.img_mask_list[0]
 
         return img_t0, img_t1, img_mask
+
+    def apply_copy_paste(self):
+        for i in range(len(self.img_t0_list)):
+            print(i)
+            self.img_t0_list[i], self.img_t1_list[i], self.img_mask_list[i] = self.copy_paste(self.img_t0_list[i], 
+                                                                                              self.img_t1_list[i], 
+                                                                                              self.img_mask_list[i])
+            
 
     def mosaic_augment(self, img_shape=(224,1024)):
         """
@@ -155,7 +159,7 @@ class DataAugment:
         """
         loads current images t0, t1 and mask into lists with size 1
         """
-        fn = self.filename[index]
+        fn = self.filename[self.index]
 
         fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
         fn_t1 =   pjoin(self.t1_root,fn+'.jpg')
@@ -192,6 +196,9 @@ class DataAugment:
         # Rotation and Scale
         R = np.eye(3)
         a = random.uniform(-degrees, degrees)
+
+        if not degrees == 0 and random.random() >= .5:
+            a += 180
         s = random.uniform(1 - scale, 1)
         R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
@@ -246,16 +253,123 @@ class DataAugment:
 
     def albumentation_augment(self):
 
-        for i, (t0_img, t1_img) in enumerate(list(zip(self.img_t0_list, self.img_t1_list))):
+        for i, (t0_img, t1_img, mask_img) in enumerate(list(zip(self.img_t0_list, self.img_t1_list, self.img_mask_list))):
                 t0_img = np.array(t0_img)
-                transformed_t0 = self.transform(image=t0_img)["image"]
-
+                # apply random shadow/channel shuffle randomly for t0 and t1
+                transformed_t0 = self.transform1(image=t0_img)["image"]
                 t1_img = np.array(t1_img)
-                transformed_t1 = self.transform(image=t1_img)["image"]
+                transformed_t1 = self.transform1(image=t1_img)["image"]
+
+                # Horizontal flip on t0,t1,mask
+                if random.random() > .5:
+                    transformed_t0 = self.transform2(image=transformed_t0)["image"]
+                    transformed_t1 = self.transform2(image=transformed_t1)["image"]
+                    transformed_mask = self.transform2(image=mask_img)["image"]
+
+                    self.img_mask_list[i] = transformed_mask
 
                 self.img_t0_list[i] = transformed_t0
                 self.img_t1_list[i] = transformed_t1
 
+
+class CopyPaste():
+    ''' 
+    Copies, resizes and rotates masked part of a random image and 
+    pastes it on a random section of the input image image 
+    '''
+
+
+    def __init__(self, t0_root, t1_root, mask_root, filename, scale=[0.3,0.8], rotation=180):
+        """
+        params: 
+            t0_root: root directory to t0 images
+            t1_root: root directory to t1 images
+            mask_root: root directory to mask with .bmp files
+            filename: a list of filenames in mask directory
+            scale: scaling of the pasted image randomly between scale[0] and scale[1]
+            rotation: rotation of the pasted image randomly between -rotation and rotation in degrees
+        """
+        self.scale = scale
+        self.t0_root = t0_root
+        self.t1_root = t1_root
+        self.mask_root = mask_root
+        self.filename = filename
+        self.rotation = rotation
+    def __call__(self, img_t0, img_t1, img_mask):
+        copy_t0, copy_t1, copy_mask = self.load_random_imgs()
+    
+
+        h, w, _ = img_t0.shape
+
+        #copy_t0 = transforms.Resize(size=(H, W))(self.instance)
+        resize_factor = random.uniform(self.scale[0], self.scale[1])
+        copy_t0 =   cv2.resize(copy_t0,   (int(resize_factor*w), int(resize_factor*h)))
+        copy_t1 =   cv2.resize(copy_t1,   (int(resize_factor*w), int(resize_factor*h)))
+        copy_mask = cv2.resize(copy_mask, (int(resize_factor*w), int(resize_factor*h)))
+        random_rotation = random.uniform(-self.rotation, self.rotation)
+        copy_t0 = self.rotate_image(copy_t0, random_rotation)
+        copy_t1 = self.rotate_image(copy_t1, random_rotation)
+        
+        copy_mask = self.rotate_image(copy_mask, random_rotation)
+        h_resized, w_resized, _ = copy_t0.shape
+
+        #Convert to np arrays
+        copy_t0 = np.asarray(copy_t0)
+        copy_t1 = np.asarray(copy_t1)
+        copy_mask = np.asarray(copy_mask)
+
+        img_t0 = np.asarray(img_t0)
+        img_t1 = np.asarray(img_t1)
+        img_mask = np.asarray(img_mask)
+
+        #Random positions for pasted images
+        h_start = np.random.randint(1,h-h_resized-1)
+        w_start = np.random.randint(1, w-w_resized-1)
+        y1, y2 = h_start, h_start + h_resized
+        x1, x2 = w_start, w_start + w_resized
+
+        binary_mask = 1.0 * (copy_mask > 0)
+        invert_mask = 1.0 * (np.logical_not(binary_mask).astype(int))
+
+        # expand dimensions of mask to match rgb images
+        blur_invert_mask = np.expand_dims(invert_mask, 2)  # Expanding dims to match channels
+        blur_binary_mask = np.expand_dims(binary_mask, 2)
+        
+        # Paste image
+        img_t0[y1:y2, x1:x2] = (copy_t0 * blur_invert_mask) + (img_t0[y1:y2, x1:x2] * blur_binary_mask)
+        img_t1[y1:y2, x1:x2] = (copy_t1 * blur_invert_mask) + (img_t1[y1:y2, x1:x2] * blur_binary_mask)
+        img_mask[y1:y2, x1:x2] = (copy_mask * invert_mask) + (img_mask[y1:y2, x1:x2] * binary_mask)
+
+        return img_t0, img_t1, img_mask
+
+
+    def rotate_image(self, image, angle):
+        """
+        Rotates an image 
+        """
+        image_center = tuple(np.array(image.shape[1::-1]) / 2)
+        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+        rotated_img = cv2.warpAffine(image, rot_mat, image.shape[1::-1], flags=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
+        return rotated_img
+
+    def load_random_imgs(self):
+        """
+        returns random images t0, t1 and mask
+        """
+        nr_images = len(self.filename)
+        index = np.random.randint(0, nr_images) 
+        fn = self.filename[index]
+
+        fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
+        fn_t1 =   pjoin(self.t1_root,fn+'.jpg')
+        fn_mask = pjoin(self.mask_root,fn+'.bmp')
+
+        img_t0 =   cv2.imread(fn_t0, 1)
+        img_t1 =   cv2.imread(fn_t1, 1)
+        img_mask = cv2.imread(fn_mask, 0)
+        #img_mask = cv2.cvtColor(img_mask, cv2.COLOR_GRAY2RGB)
+        return img_t0, img_t1, img_mask
+        
 
 # DEBUG
 if __name__ == '__main__':
@@ -270,7 +384,7 @@ if __name__ == '__main__':
     data_augmenter = DataAugment(img_t0_root, img_t1_root, img_mask_root, filename)
 
     index = 11
-    img_t0, img_t1, img_mask = data_augmenter.data_augment(index)
+    img_t0, img_t1, img_mask = data_augmenter(index)
 
     img_t0 = cv2.cvtColor(img_t0, cv2.COLOR_BGR2RGB)
     img_t0 = Image.fromarray(img_t0.astype(np.uint8))
