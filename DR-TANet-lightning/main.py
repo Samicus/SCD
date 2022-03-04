@@ -8,10 +8,12 @@ from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
 from datetime import datetime
+import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
+parser.add_argument("--det", action="store_true")
 parsed_args = parser.parse_args()
 
 now = datetime.now()
@@ -20,6 +22,11 @@ date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
 NUM_GPU = 1
 if parsed_args.cpu:
     NUM_GPU = 0
+    
+DETERMINISTIC = False
+if parsed_args.det:
+    DETERMINISTIC = True
+    torch.use_deterministic_algorithms
     
 for set_nr in range(NUM_SETS):
     
@@ -40,9 +47,9 @@ for set_nr in range(NUM_SETS):
    
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger
+                      logger=aim_logger, deterministic=DETERMINISTIC
                       )
     
     len_train_loader = len(data_module.train_dataloader())
-    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader)
+    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader=len_train_loader, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)

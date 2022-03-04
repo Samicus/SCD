@@ -24,13 +24,13 @@ class PCDdataModule(LightningDataModule):
         self.rotated_GSV_dataset = datasets.PCDcrop(pjoin(ROT_GSV_DIR, "set{}".format(self.set_nr), "train"))
         self.rotated_concatenated_datasets = ConcatDataset([self.rotated_TSUNAMI_dataset, self.rotated_GSV_dataset])
         
-        self.val_rotated_TSUNAMI_dataset = datasets.PCDcrop(pjoin(ROT_TSUNAMI_DIR, "set{}".format(self.set_nr), "val"))
-        self.val_rotated_GSV_dataset = datasets.PCDcrop(pjoin(ROT_GSV_DIR, "set{}".format(self.set_nr), "val"))
+        self.val_rotated_TSUNAMI_dataset = datasets.PCDeval(pjoin(ROT_TSUNAMI_DIR, "set{}".format(self.set_nr), "val"))
+        self.val_rotated_GSV_dataset = datasets.PCDeval(pjoin(ROT_GSV_DIR, "set{}".format(self.set_nr), "val"))
         self.val_rotated_concatenated_datasets = ConcatDataset([self.val_rotated_TSUNAMI_dataset, self.val_rotated_GSV_dataset])
 
 
     def train_dataloader(self):
-        return  DataLoader(self.rotated_concatenated_datasets,
+        return  DataLoader(self.concatenated_datasets,
                            num_workers=NUM_WORKERS, 
                            batch_size=BATCH_SIZE,
                            shuffle=True)
@@ -43,6 +43,6 @@ class PCDdataModule(LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             #datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),7
-            self.val_rotated_concatenated_datasets,
+            self.val_concatenated_datasets,
                                           num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
                                           shuffle=False)

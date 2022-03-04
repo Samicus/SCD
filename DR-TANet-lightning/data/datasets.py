@@ -48,17 +48,10 @@ class PCDfull(Dataset):
 
         # Invert BMP mask
         mask = 255 - mask
-        
-        h, w, c = img_t0.shape
-        r = 288. / min(w, h)
-        # resize images so that min(w, h) == 256
-        img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
-        img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
-        mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
-        
-        img_t0 = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0  # -- > (RGB, height, width)
-        img_t1 = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0  # -- > (RGB, height, width)
-        mask_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)               # -- > (RGB, height, width)
+
+        img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
+        img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 0, 1)     # -- > (RGB, height, width)
 
         input_ = np.concatenate((img_t0, img_t1))
         
@@ -105,16 +98,9 @@ class PCDeval(Dataset):
         # Invert BMP mask
         mask = 255 - cv2.imread(fn_mask, 0)
 
-        h, w, c = img_t0.shape
-        r = 288. / min(w, h)
-        # resize images so that min(w, h) == 256
-        img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
-        img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
-        mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
-
-        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
-        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
-        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)                 # -- > (RGB, height, width)
+        img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 0, 1)                       # -- > (RGB, height, width)
+        img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 0, 1)                       # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 0, 1)     # -- > (RGB, height, width)
         
         input_r_ = np.concatenate((img_t0_r_, img_t1_r_))
 
@@ -159,23 +145,21 @@ class PCDcrop(Dataset):
         
         # Invert BMP mask
         mask = 255 - cv2.imread(fn_mask, 0)
-
-        h, w, c = img_t0.shape
-        r = 288. / min(w, h)
-        # resize images so that min(w, h) == 256
-        img_t0_r = cv2.resize(img_t0, (int(r * w), int(r * h)))
-        img_t1_r = cv2.resize(img_t1, (int(r * w), int(r * h)))
-        mask_r = cv2.resize(mask, (int(r * w), int(r * h)))[:, :, np.newaxis]
-
-        img_t0_r_ = np.asarray(img_t0_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
-        img_t1_r_ = np.asarray(img_t1_r).astype('f').transpose(2, 0, 1) / 128.0 - 1.0   # -- > (RGB, height, width)
-        mask_r_ = np.asarray(mask_r>128).astype('f').transpose(2, 0, 1)                 # -- > (RGB, height, width)
+                
+        img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
+        img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 0, 1)     # -- > (RGB, height, width)
 
         crop_width = 256
         _, h, w = img_t0_r_.shape
-        x_l = np.random.randint(0, w - crop_width)
+        try:
+            x_l = np.random.randint(0, w - crop_width)
+        except ValueError:
+            x_l = 0
         x_r = x_l + crop_width
-        y_l = np.random.randint(0, h - crop_width)
+        try:
+            y_l = np.random.randint(0, h - crop_width)
+        except ValueError: y_l = 0
         y_r = y_l + crop_width
 
         input_ = np.concatenate((img_t0_r_[:, y_l:y_r, x_l:x_r], img_t1_r_[:, y_l:y_r, x_l:x_r]), axis=0)
