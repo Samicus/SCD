@@ -74,7 +74,6 @@ class TANet(LightningModule):
     
     def test_step(self, batch, batch_idx):
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=None)
-        #print(metrics['f1-score'])
         self.log_dict(metrics)
         return metrics
     
@@ -132,8 +131,8 @@ class TANet(LightningModule):
             if LOG_IMG == True or LOG_IMG == None:
                 
                 # Convert input to image
-                t0 = ((inputs[0:3] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
-                t1 = ((inputs[3:6] + 1.0) * 128.0).type(torch.uint8)  # (RGB, height, width)
+                t0 = (inputs[0:3] * 255.0).type(torch.uint8)  # (RGB, height, width)
+                t1 = (inputs[3:6] * 255.0).type(torch.uint8)  # (RGB, height, width)
 
                 # Convert prediction to image
                 pred_img = pred.type(torch.uint8)

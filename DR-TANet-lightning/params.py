@@ -15,12 +15,12 @@ ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 MAX_EPOCHS = 1000
 NUM_WORKERS = 8
-BATCH_SIZE = 1
+BATCH_SIZE = 16
 NUM_SETS = 1
 encoder_arch = 'resnet18'
-local_kernel_size = 1
+local_kernel_size = 3
 stride = 1
-padding = 0
+padding = 1
 groups = 4
 drtam = False
 refinement = False
