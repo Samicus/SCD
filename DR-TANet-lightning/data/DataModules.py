@@ -1,48 +1,45 @@
-from params import NUM_WORKERS, TSUNAMI_DIR, GSV_DIR, ROT_TSUNAMI_DIR, ROT_GSV_DIR, BATCH_SIZE
 from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader, ConcatDataset
-from data import datasets
+from data.datasets import PCD
+import os
+
+dirname = os.path.dirname
+PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
+ROT_PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "rotated_PCD")
+
+TSUNAMI_DIR = pjoin(PCD_DIR, "TSUNAMI")
+GSV_DIR = pjoin(PCD_DIR, "GSV")
+ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
+ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr):
+    def __init__(self, set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE):
         self.set_nr = set_nr
+        self.NUM_WORKERS = NUM_WORKERS
+        self.BATCH_SIZE = BATCH_SIZE
         
-        # IMPORTANT FOR LOG NAME
-        self.TRAIN_DATASET_NAME = "CROPPED_TSUNAMI_and_GSV"
-        self.VAL_DATASET_NAME = "TSUNAMI_and_GSV_ROTATED"
+        pre_process = {
+            "default": {"TSUNAMI": TSUNAMI_DIR, "GSV": GSV_DIR},
+            "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
+                       }[PRE_PROCESS]
         
-        self.TSUNAMI_dataset = datasets.PCDcrop(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
-        self.GSV_dataset = datasets.PCDcrop(pjoin(GSV_DIR, "set{}".format(self.set_nr), "train"))
-        self.concatenated_datasets = ConcatDataset([self.TSUNAMI_dataset, self.GSV_dataset])
-
-        self.val_TSUNAMI_dataset = datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "val"))
-        self.val_GSV_dataset = datasets.PCDeval(pjoin(GSV_DIR, "set{}".format(self.set_nr), "val"))
-        self.val_concatenated_datasets = ConcatDataset([self.val_TSUNAMI_dataset, self.val_GSV_dataset])
-
-        self.rotated_TSUNAMI_dataset = datasets.PCDcrop(pjoin(ROT_TSUNAMI_DIR, "set{}".format(self.set_nr), "train"))
-        self.rotated_GSV_dataset = datasets.PCDcrop(pjoin(ROT_GSV_DIR, "set{}".format(self.set_nr), "train"))
-        self.rotated_concatenated_datasets = ConcatDataset([self.rotated_TSUNAMI_dataset, self.rotated_GSV_dataset])
+        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), aug_params, AUGMENT_ON, PCD_CONFIG)
+        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), aug_params, AUGMENT_ON, PCD_CONFIG)
+        self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
-        self.val_rotated_TSUNAMI_dataset = datasets.PCDeval(pjoin(ROT_TSUNAMI_DIR, "set{}".format(self.set_nr), "val"))
-        self.val_rotated_GSV_dataset = datasets.PCDeval(pjoin(ROT_GSV_DIR, "set{}".format(self.set_nr), "val"))
-        self.val_rotated_concatenated_datasets = ConcatDataset([self.val_rotated_TSUNAMI_dataset, self.val_rotated_GSV_dataset])
-
-
     def train_dataloader(self):
-        return  DataLoader(self.concatenated_datasets,
-                           num_workers=NUM_WORKERS, 
-                           batch_size=BATCH_SIZE,
+        return  DataLoader(self.concat_data,
+                           num_workers=self.NUM_WORKERS, 
+                           batch_size=self.BATCH_SIZE,
                            shuffle=True)
       
     def test_dataloader(self):
-        return DataLoader(datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),
-                                          num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
+        return DataLoader(PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), AUGMENT_ON=False, PCD_CONFIG="full"),
+                                          num_workers=self.NUM_WORKERS, batch_size=self.BATCH_SIZE,
                                           shuffle=False)
 
     def val_dataloader(self):
-        return DataLoader(
-            #datasets.PCDeval(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")),7
-            self.val_concatenated_datasets,
-                                          num_workers=NUM_WORKERS, batch_size=BATCH_SIZE,
+        return DataLoader(PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), aug_params=None, AUGMENT_ON=False, PCD_CONFIG="full"),
+                                          num_workers=self.NUM_WORKERS, batch_size=self.BATCH_SIZE,
                                           shuffle=False)

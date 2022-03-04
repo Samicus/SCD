@@ -9,20 +9,20 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from aim import Image
 from os.path import join as pjoin
-from params import dir_img
 from torchvision.utils import save_image
+import os
 
+dirname = os.path.dirname
+dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
 CHANNEL = 0
 NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, DETERMINISTIC=False):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=False):
         super(TANet, self).__init__()
         self.DETERMINISTIC = DETERMINISTIC
-        self.len_train_loader = len_train_loader
-        self.set_ = 0
         self.save_hyperparameters()
         self.automatic_optimization = False
 

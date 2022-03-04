@@ -1,12 +1,10 @@
-from tabnanny import check
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from os.path import join as pjoin
-from params import dir_img
 import torch
 import cv2
-
+import yaml
 
 __all__ = ['Upsample', 'upsample']
 
@@ -17,44 +15,7 @@ class criterion_CEloss(nn.Module):
         super(criterion_CEloss, self).__init__()
         self.loss = nn.NLLLoss(weight)
     def forward(self, output, target):
-        #print("MIN: " + str(torch.min(F.softmax(output, dim=1))))
-        #print("MAX: " + str(torch.max(F.softmax(output, dim=1))))
-        #print("MIN: " + str(torch.min(target)))
-        #print("MAX: " + str(torch.max(target)))
         return self.loss(F.log_softmax(output, dim=1), target)
-    
-def l1_loss(input, target):
-    """ L1 Loss without reduce flag.
-    Args:
-        input (FloatTensor): Input tensor
-        target (FloatTensor): Output tensor
-    Returns:
-        [FloatTensor]: L1 distance between input and output
-    """
-
-    return torch.mean(torch.abs(input - target))
-    
-class DiceLoss(nn.Module):
-    def __init__(self):
-        super(DiceLoss, self).__init__()
-        self.epsilon = 1
-    
-    def forward(self, predict, target):
-#         target = target.unsqueeze(1)
-#         print(predict.shape,target.shape)
-        assert predict.size() == target.size(), "the size of predict and target must be equal."
-        num = predict.size(0)
-        
-        pre = torch.sigmoid(predict).view(num, -1)
-#         pre = predict.view(num, -1)
-        tar = target.view(num, -1)
-        
-        intersection = (pre * tar).sum(-1).sum()  #鍒╃敤棰勬祴鍊间笌鏍囩鐩镐箻褰撲綔浜ら泦
-        union = (pre + tar).sum(-1).sum()
-        
-        score = 1 - 2 * (intersection + self.epsilon) / (union + self.epsilon)
-        
-        return score
 
 class _BNReluConv(nn.Sequential):
     def __init__(self, num_maps_in, num_maps_out, k=3, batch_norm=True, bn_momentum=0.1, bias=False, dilation=1):
@@ -102,26 +63,7 @@ def cal_metrics(pred,target):
 
     return precision, recall, accuracy, f1_score
     
-def generate_output_metrics(t0, t1, mask_gt, mask_pred, w_r, h_r, w_ori, h_ori, set_, ds, index, STORE=False):
-    
-    fn_img = pjoin(dir_img, '{0}-{1:08d}.png'.format(ds, index))
-    w, h = w_r, h_r
-    
-    t0_r = np.transpose(t0.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-    t1_r = np.transpose(t1.cpu().numpy(), (1, 2, 0)).astype(np.uint8)
-    
-    mask_target = cv2.cvtColor(mask_gt.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-    mask_prediction = cv2.cvtColor(mask_pred.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-    
-    input_images = np.hstack((t0_r, t1_r))                      # Input images side-by-side
-    mask_images = np.hstack((mask_target, mask_prediction))     # Prediction and target images side-by-side
-    
-    img_save = np.vstack((input_images, mask_images))           # Stack input and mask horizontally
-    
-    if w != w_ori or h != h_ori:
-            img_save = cv2.resize(img_save, (h_ori, w_ori))
-            
-    if STORE:
-        cv2.imwrite(fn_img, img_save)
-    else:
-        return (img_save, fn_img)
+def load_config(hparams_path):
+    with open(hparams_path) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        return config

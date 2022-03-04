@@ -5,21 +5,16 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-from params import scale, translate, rotation, mosaic_aug, random_erase_aug, albumentations_config
 import albumentations as A
 
 
-
-
 class DataAugment:
-    def __init__(self, t0_root, t1_root, mask_root, filename):
+    def __init__(self, t0_root, t1_root, mask_root, filename, aug_params):
         self.t0_root = t0_root
         self.t1_root = t1_root
         self.mask_root = mask_root
         self.filename = filename
         self.index = None
-
-
         
         self.transform1 = A.Compose([
                 A.RandomShadow(p=.5),
@@ -29,6 +24,21 @@ class DataAugment:
         self.transform2 = A.Compose([
             A.HorizontalFlip(p=1),
             ])
+        
+        mosaic_params = aug_params["MOSAIC"]
+        random_erase_params = aug_params["RANDOM_ERASE"]
+        albumentation_params = aug_params["ALBUMENTATIONS"]
+        
+        self.mosaic_aug = mosaic_params["mosaic_aug"]
+        self.mosaic_th = mosaic_params["mosaic_th"]
+        self.translate = mosaic_params["translate"]
+        self.scale = mosaic_params["scale"]
+        self.rotation = mosaic_params["rotation"]
+        
+        self.random_erase_aug = random_erase_params["random_erase_aug"]
+        self.random_erase_th = random_erase_params["random_erase_th"]
+        
+        self.albumentations_config = albumentation_params["albumentations_config"]
 
     def __call__(self, index):
         """
@@ -38,20 +48,20 @@ class DataAugment:
         self.img_t0_list = []
         self.img_t1_list = []
         self.img_mask_list = []
-        if mosaic_aug:
+        if self.mosaic_aug:
             self.load_mosaic_imgs()
         else:
             self.load_current_img()
 
         # albumentations_config = 0 -> no albumentation augment
-        if not albumentations_config == 0:
+        if not self.albumentations_config == 0:
             # Augments data with albumentations, Which augments to be applied is chosen in params.py by albumentations_config
             self.albumentation_augment()
 
-        if random_erase_aug:
+        if self.random_erase_aug:
             self.random_erase_augment(WIDTH_DIV=2.0, HEIGHT_DIV=2.0)
     
-        if mosaic_aug:
+        if self.mosaic_aug:
             img_t0, img_t1, img_mask = self.mosaic_augment()
         else:
             img_t0, img_t1, img_mask = self.img_t0_list[0], self.img_t1_list[0], self.img_mask_list[0]
@@ -85,7 +95,7 @@ class DataAugment:
             img_mask = self.img_mask_list[i]
 
             # scale each image seperately
-            resize_factor = random.uniform(scale[0], scale[1])
+            resize_factor = random.uniform(self.scale[0], self.scale[1])
             h_orig, w_orig, _ = img_t0.shape
             img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
             img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
@@ -115,7 +125,7 @@ class DataAugment:
             img4_t1[y1a:y2a, x1a:x2a] = img_t1[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
             img4_mask[y1a:y2a, x1a:x2a] = img_mask[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
         
-        img4_t0, img4_t1, img4_mask = self.random_perspective(img4_t0, img4_t1, img4_mask,degrees=rotation, translate=translate,  border=mosaic_border)
+        img4_t0, img4_t1, img4_mask = self.random_perspective(img4_t0, img4_t1, img4_mask,degrees=self.rotation, translate=self.translate,  border=mosaic_border)
         
         return img4_t0, img4_t1, img4_mask
 

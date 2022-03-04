@@ -11,10 +11,8 @@ import os
 
 """ Required dataset structure
 
-Only training data is rotated
-
 PCD        
-├── train/
+├── data/
 │   ├── mask/       # *.bmp
 │   ├── t0/         # *.jpg
 |   ├── t1/         # *.jpg
@@ -30,8 +28,9 @@ python3 rotate_pcd.py -i /path/to/dataset
 
 """
 
-DEGREE_INCREMENT = 24
-NUM_CROPS = 4
+DEGREE_INCREMENT = 90   # 4 rotations
+NUM_CROPS = 15
+NUM_SLIDE_PIXELS = 56
 
 # construct the argument parse and parse the arguments
 parser = argparse.ArgumentParser()
@@ -43,11 +42,11 @@ parser.add_argument("--t1", action="store_true")
 args = vars(parser.parse_args())
 
 PCD_PATH = args["dataset"]
-TRAIN_PATH = pjoin(PCD_PATH, "test")
+data_path = pjoin(PCD_PATH, "data")
 
-mask_path = pjoin(TRAIN_PATH, "mask")
-t0_path = pjoin(TRAIN_PATH, "t0")
-t1_path = pjoin(TRAIN_PATH, "t1")
+mask_path = pjoin(data_path, "mask")
+t0_path = pjoin(data_path, "t0")
+t1_path = pjoin(data_path, "t1")
 
 operations = [(mask_path,   "*.bmp",    args["mask"]),
               (t0_path,     "*.jpg",    args["t0"]),
@@ -63,14 +62,17 @@ def rotate_dir(path, extension):
     for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
         h, w, _ = image.shape
-        crop_width = int(w / NUM_CROPS)
+        crop_width = w
         center = (crop_width // 2, h // 2)
-        for angle in np.arange(0, 360, DEGREE_INCREMENT):
             
-            for idx in range(NUM_CROPS):
+        for idx in range(NUM_CROPS):
+            
+            for angle in np.arange(0, 360, DEGREE_INCREMENT):
+            
+                SLIDE = NUM_SLIDE_PIXELS * idx
                 
-                crop_low = idx * crop_width
-                crop_high = idx * crop_width + crop_width
+                crop_low = SLIDE
+                crop_high = crop_width + SLIDE
                 
                 M = cv2.getRotationMatrix2D(center, angle, 1.0)
                 rotated = cv2.warpAffine(image[:, crop_low : crop_high, :], M, (crop_width, crop_width), borderMode=cv2.BORDER_CONSTANT, borderValue=BACKGROUND_COLOR)
