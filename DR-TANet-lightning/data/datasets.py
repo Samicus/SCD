@@ -11,7 +11,7 @@ def check_validness(f):
 
 class PCD(Dataset):
 
-    def __init__(self, root, AUGMENT_ON, AUG_PARAMS, PCD_CONFIG):
+    def __init__(self, root, AUG_PARAMS, AUGMENT_ON, PCD_CONFIG):
         super(PCD, self).__init__()
         
         self.img_t0_root = pjoin(root,'t0')
@@ -57,10 +57,10 @@ class PCD(Dataset):
         mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 0, 1)     # -- > (RGB, height, width)
         
         # Cropped or full images
-        if self.PCD_CONFIG == "CROP":
+        if self.PCD_CONFIG == "crop":
             input_, mask_ = self.crop(img_t0_r_, img_t1_r_, mask_r_)
-        elif self.PCD_CONFIG == "FULL":
-            input_ = np.concatenate(img_t0_r_, img_t1_r_)
+        elif self.PCD_CONFIG == "full":
+            input_ = np.concatenate((img_t0_r_, img_t1_r_))
             mask_ = mask_r_
         
         return input_, mask_

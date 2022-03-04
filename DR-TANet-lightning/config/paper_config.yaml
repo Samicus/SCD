@@ -1,0 +1,35 @@
+MISC:
+  PRE_PROCESS: "paper"  # "default" or "paper"
+  PCD_CONFIG : "crop" # "crop" or "full"
+  MAX_EPOCHS : 500
+  NUM_WORKERS : 8
+  BATCH_SIZE : 16
+  NUM_SETS : 5
+  LOG_NAME : "paper_configuration"
+  AUGMENT_ON : False
+
+HPARAMS:
+
+  encoder_arch : 'resnet18'
+  local_kernel_size : 3
+  stride : 1
+  padding : 1
+  groups : 4
+  drtam : False
+  refinement : False
+
+AUGMENTATIONS:
+
+  MOSAIC:
+    mosaic_aug : False
+    mosaic_th : 1.0
+    translate : 0.1
+    scale : [0.1, 1.0]
+    rotation : 45
+
+  RANDOM_ERASE:
+    random_erase_aug : False
+    random_erase_th : 0.7
+
+  ALBUMENTATIONS:
+    albumentations_config : 0

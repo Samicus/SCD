@@ -24,7 +24,6 @@ class DataAugment:
         self.transform2 = A.Compose([
             A.HorizontalFlip(p=1),
             ])
-        
         mosaic_params = aug_params["MOSAIC"]
         random_erase_params = aug_params["RANDOM_ERASE"]
         albumentation_params = aug_params["ALBUMENTATIONS"]
