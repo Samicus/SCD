@@ -29,15 +29,20 @@ store_imgs = False
 augment_on = False
 
 # MOSAIC Augmentation
-mosaic_aug = False
+mosaic_on = False
 mosaic_th = 1.0
 translate = 0.1
 scale = [0.1, 1.0]
 rotation = 45
 
 # Random Erase Augmentation
-random_erase_aug = False
+random_erase_on = False
 random_erase_th = 0.7
 
 # Albumentations
-albumentations_config = 0
+albumentations_on = True
+
+# Copy_paste
+copy_paste_on = True
+copy_paste_scale = [0.4,1]
+copy_paste_rotation = 180
