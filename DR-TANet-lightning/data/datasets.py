@@ -4,8 +4,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
-from params import mosaic_aug, mosaic_th, random_erase_aug, random_erase_th, augment_on
-import random
+from params import augment_on
 from data.augmentations import DataAugment
 
 

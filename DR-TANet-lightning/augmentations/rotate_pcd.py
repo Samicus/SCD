@@ -43,7 +43,7 @@ parser.add_argument("--t1", action="store_true")
 args = vars(parser.parse_args())
 
 PCD_PATH = args["dataset"]
-TRAIN_PATH = pjoin(PCD_PATH, "train")
+TRAIN_PATH = pjoin(PCD_PATH, "test")
 
 mask_path = pjoin(TRAIN_PATH, "mask")
 t0_path = pjoin(TRAIN_PATH, "t0")

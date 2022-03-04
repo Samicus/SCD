@@ -5,10 +5,8 @@ import math
 import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
-from params import scale, translate, rotation, mosaic_aug, random_erase_aug, albumentations_config, copy_paste_aug, copy_paste_scale, copy_paste_rotation
+from params import scale, translate, rotation, mosaic_on, random_erase_on, albumentations_on, copy_paste_on, copy_paste_scale, copy_paste_rotation
 import albumentations as A
-
-
 
 
 class DataAugment:
@@ -20,6 +18,7 @@ class DataAugment:
         self.index = None
 
         self.copy_paste = CopyPaste(t0_root, t1_root, mask_root, filename, scale=[copy_paste_scale[0],copy_paste_scale[1]], rotation=copy_paste_rotation)
+
         
         self.transform1 = A.Compose([
                 A.RandomShadow(p=.5),
@@ -38,22 +37,22 @@ class DataAugment:
         self.img_t0_list = []
         self.img_t1_list = []
         self.img_mask_list = []
-        if mosaic_aug:
+        if mosaic_on:
             self.load_mosaic_imgs()
         else:
             self.load_current_img()
 
-        if copy_paste_aug:
+        if copy_paste_on:
             self.apply_copy_paste()
         # albumentations_config = 0 -> no albumentation augment
-        if not albumentations_config == 0:
+        if albumentations_on:
             # Augments data with albumentations, Which augments to be applied is chosen in params.py by albumentations_config
             self.albumentation_augment()
         # Apply random erase
-        if random_erase_aug:
+        if random_erase_on:
             self.random_erase_augment(WIDTH_DIV=2.0, HEIGHT_DIV=2.0)
         #apply mosaic
-        if mosaic_aug:
+        if mosaic_on:
             img_t0, img_t1, img_mask = self.mosaic_augment()
         else:
             img_t0, img_t1, img_mask = self.img_t0_list[0], self.img_t1_list[0], self.img_mask_list[0]
@@ -196,7 +195,6 @@ class DataAugment:
         # Rotation and Scale
         R = np.eye(3)
         a = random.uniform(-degrees, degrees)
-
         if not degrees == 0 and random.random() >= .5:
             a += 180
         s = random.uniform(1 - scale, 1)
