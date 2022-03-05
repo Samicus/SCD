@@ -31,29 +31,21 @@ python3 rotate_pcd.py -i /path/to/dataset
 DEGREE_INCREMENT = 90   # 4 rotations
 NUM_CROPS = 15
 NUM_SLIDE_PIXELS = 56
+NUM_SETS = 5
 
 # Construct the argument parse and parse the arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--dataset", required=True,
 	help="path to the dataset")
-parser.add_argument("-s", "--split", required=True,
-	help="name of split")
+parser.add_argument("-n", "--set_nr", required=True,
+	help="set number")
 parser.add_argument("--mask", action="store_true")
 parser.add_argument("--t0", action="store_true")
 parser.add_argument("--t1", action="store_true")
 args = vars(parser.parse_args())
 
 PCD_PATH = args["dataset"]
-SPLIT_NAME = args["split"]
-data_path = pjoin(PCD_PATH, SPLIT_NAME)
-
-mask_path = pjoin(data_path, "mask")
-t0_path = pjoin(data_path, "t0")
-t1_path = pjoin(data_path, "t1")
-
-operations = [(mask_path,   "*.bmp",    args["mask"]),
-              (t0_path,     "*.jpg",    args["t0"]),
-              (t1_path,     "*.jpg",    args["t1"])]
+SET_NR = int(args["set_nr"])
 
 def rotate_dir(path, extension):
     
@@ -61,7 +53,7 @@ def rotate_dir(path, extension):
     
     if extension == '*.bmp':
         BACKGROUND_COLOR = (255, 255, 255)
-    
+        
     for filepath in glob.glob(pjoin(path, extension)):
         image = cv2.imread(filepath)
         h, w, _ = image.shape
@@ -87,7 +79,21 @@ def rotate_dir(path, extension):
                 cv2.imwrite(pjoin(output_path, filename), rotated)
                 
 
-for (path, extension, arg) in operations:
-    if arg:
-        print("Performing rotation augmentation in path: {}".format(path))
-        rotate_dir(path, extension)
+for set_nr in range(SET_NR):
+    
+    data_path = pjoin(PCD_PATH, "set{}".format(set_nr), "train")
+
+    mask_path = pjoin(data_path, "mask")
+    t0_path = pjoin(data_path, "t0")
+    t1_path = pjoin(data_path, "t1")
+
+    operations = [
+        (mask_path,   "*.bmp",    args["mask"]),
+        (t0_path,     "*.jpg",    args["t0"]),
+        (t1_path,     "*.jpg",    args["t1"])
+        ]
+
+    for (path, extension, arg) in operations:
+        if arg:
+            print("Performing rotation augmentation in path: {}".format(path))
+            rotate_dir(path, extension)

@@ -77,9 +77,15 @@ class PCD(Dataset):
         _, h, w = img_t0.shape
         crop_height = h
         crop_width = 256
-        x_l = np.random.randint(0, w - crop_width)
+        try:
+            x_l = np.random.randint(0, w - crop_width)
+        except ValueError:
+            x_l = 0
         x_r = x_l + crop_width
-        y_l = np.random.randint(0, h - crop_height)
+        try:
+            y_l = np.random.randint(0, h - crop_height)
+        except ValueError:
+            y_l = 0
         y_r = y_l + crop_width
 
         input_ = np.concatenate((img_t0[:, y_l:y_r, x_l:x_r], img_t1[:, y_l:y_r, x_l:x_r]), axis=0)
