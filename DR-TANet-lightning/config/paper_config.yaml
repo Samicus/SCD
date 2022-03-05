@@ -1,7 +1,7 @@
 MISC:
   PRE_PROCESS: "paper"  # "default" or "paper"
   PCD_CONFIG : "crop" # "crop" or "full"
-  MAX_EPOCHS : 500
+  MAX_EPOCHS : 150
   NUM_WORKERS : 8
   BATCH_SIZE : 16
   NUM_SETS : 5

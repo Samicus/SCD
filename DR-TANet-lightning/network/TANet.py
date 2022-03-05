@@ -88,11 +88,11 @@ class TANet(LightningModule):
         
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
-        scheduler = ReduceLROnPlateau(optimizer, "min")
+        scheduler = ReduceLROnPlateau(optimizer, "max")
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
-            'monitor': 'val_loss'
+            'monitor': 'f1-score'
             }
         
     def evaluation(self, batch, batch_idx, LOG_IMG=False):
@@ -104,7 +104,7 @@ class TANet(LightningModule):
         recall_tot = 0
         accuracy_tot = 0
         f1_score_tot = 0
-        val_loss = 0
+        #val_loss = 0
         
         for idx, (inputs, target) in enumerate(zip(inputs, mask)):
             
@@ -113,13 +113,13 @@ class TANet(LightningModule):
             pred = self(inputs_forward)
             pred = torch.squeeze(pred, dim=0)   # (1, RGB, height, width) --> (RGB, height, width)
             
-            val_loss += F.binary_cross_entropy_with_logits(pred, target)
+            # Compute validation loss
+            #val_loss += F.binary_cross_entropy_with_logits(pred, target)
             
             # Activation
             pred = torch.sigmoid(pred)
             pred[pred <= 0.5] = 0
             pred[pred > 0.5] = 1
-            target[target == 1] = 1
             target = target.int()
             
             # Calculate metrics
@@ -167,7 +167,7 @@ class TANet(LightningModule):
             'recall': recall_tot / current_batch_size,
             'accuracy': accuracy_tot / current_batch_size,
             'f1-score': f1_score_tot / current_batch_size,
-            'val_loss': val_loss / current_batch_size
+            #'val_loss': val_loss / current_batch_size
             }
         
         return metrics
