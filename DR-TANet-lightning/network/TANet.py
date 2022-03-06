@@ -35,7 +35,6 @@ class TANet(LightningModule):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, img):
-        
         img_t0, img_t1 = torch.split(img, 3, 1)
         features_t0 = self.encoder1(img_t0)
         features_t1 = self.encoder2(img_t1)

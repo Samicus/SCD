@@ -16,15 +16,12 @@ CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--config", required=True,
+parser.add_argument("-c", "--config", required=True,
 	help="path to YAML")
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--det", action="store_true")
 parsed_args = parser.parse_args()
-
-now = datetime.now()
-date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
 
 NUM_GPU = 1
 if parsed_args.cpu:

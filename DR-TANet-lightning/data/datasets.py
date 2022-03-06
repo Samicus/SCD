@@ -4,6 +4,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
 from data.augmentations import DataAugment
+import PIL
 
 
 def check_validness(f):
@@ -51,7 +52,13 @@ class PCD(Dataset):
 
         # Invert BMP mask
         mask = 255 - mask
-
+        
+        # (224 x 224) --> (256 x 256)
+        if mask.shape[0] < 256 and mask.shape[1] < 256:
+            img_t0 = cv2.resize(img_t0, (256, 256))
+            img_t1 = cv2.resize(img_t1, (256, 256))
+            mask = cv2.resize(mask, (256, 256))
+            
         img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
         img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 0, 1) / 255.0               # -- > (RGB, height, width)
         mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 0, 1)     # -- > (RGB, height, width)
@@ -75,18 +82,18 @@ class PCD(Dataset):
     def crop(self, img_t0, img_t1, mask):
         
         _, h, w = img_t0.shape
-        crop_height = h
-        crop_width = 256
+        crop_size = 256
+        
         try:
-            x_l = np.random.randint(0, w - crop_width)
+            x_l = np.random.randint(0, w - crop_size)
         except ValueError:
             x_l = 0
-        x_r = x_l + crop_width
+        x_r = x_l + crop_size
         try:
-            y_l = np.random.randint(0, h - crop_height)
+            y_l = np.random.randint(0, h - crop_size)
         except ValueError:
             y_l = 0
-        y_r = y_l + crop_width
+        y_r = y_l + crop_size
 
         input_ = np.concatenate((img_t0[:, y_l:y_r, x_l:x_r], img_t1[:, y_l:y_r, x_l:x_r]), axis=0)
         mask_ = mask[:, y_l:y_r, x_l:x_r]
