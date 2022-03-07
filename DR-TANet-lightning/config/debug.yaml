@@ -1,11 +1,11 @@
 MISC:
   PRE_PROCESS: "default"  # "default" or "paper"
-  PCD_CONFIG : "full" # "crop" or "full"
-  MAX_EPOCHS : 500
+  PCD_CONFIG : "crop" # "crop" or "full"
+  MAX_EPOCHS : 150
   NUM_WORKERS : 8
-  BATCH_SIZE : 16
+  BATCH_SIZE : 1
   NUM_SETS : 5
-  LOG_NAME : "no_augmentation"
+  LOG_NAME : "paper_configuration"
   AUGMENT_ON : False
 
 HPARAMS:
@@ -33,7 +33,7 @@ AUGMENTATIONS:
 
   ALBUMENTATIONS:
     albumentations_on : False
-
+  
   COPY_PASTE:
     copy_paste_on : False
     copy_paste_scale : [0.3, 1.0]
