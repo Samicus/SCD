@@ -1,8 +1,8 @@
 MISC:
   PRE_PROCESS: "default"  # "default" or "paper"
-  PCD_CONFIG : "crop" # "crop" or "full"
+  PCD_CONFIG : "full" # "crop" or "full"
   MAX_EPOCHS : 150
-  NUM_WORKERS : 8
+  NUM_WORKERS : 1
   BATCH_SIZE : 1
   NUM_SETS : 5
   LOG_NAME : "paper_configuration"
@@ -11,9 +11,9 @@ MISC:
 HPARAMS:
 
   encoder_arch : 'resnet18'
-  local_kernel_size : 3
+  local_kernel_size : 1
   stride : 1
-  padding : 1
+  padding : 0
   groups : 4
   drtam : False
   refinement : False

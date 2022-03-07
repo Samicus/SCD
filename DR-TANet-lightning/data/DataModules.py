@@ -14,7 +14,7 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE):
+    def __init__(self, set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL="TSUNAMI"):
         self.set_nr = set_nr
         self.aug_params = aug_params
         self.NUM_WORKERS = NUM_WORKERS
@@ -33,6 +33,8 @@ class PCDdataModule(LightningDataModule):
         GSV_val = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full")
         self.concat_data_val = ConcatDataset([TSUNAMI_val, GSV_val])
         
+        self.test_dir = {"TSUNAMI": TSUNAMI_DIR, "GSV": GSV_DIR}[EVAL]
+        
     def train_dataloader(self):
         return  DataLoader(self.concat_data,
                            num_workers=self.NUM_WORKERS, 
@@ -40,7 +42,7 @@ class PCDdataModule(LightningDataModule):
                            shuffle=True)
       
     def test_dataloader(self):
-        return DataLoader(PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full"),
+        return DataLoader(PCD(pjoin(self.test_dir, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full"),
                                           num_workers=self.NUM_WORKERS, batch_size=self.BATCH_SIZE,
                                           shuffle=False)
 

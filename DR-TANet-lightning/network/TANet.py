@@ -130,16 +130,16 @@ class TANet(LightningModule):
             if LOG_IMG == True or LOG_IMG == None:
                 
                 # Convert input to image
-                t0 = (inputs[0:3] * 255.0).type(torch.uint8)  # (RGB, height, width)
-                t1 = (inputs[3:6] * 255.0).type(torch.uint8)  # (RGB, height, width)
+                t0 = (inputs[0:3] * 255.0).type(torch.uint8).transpose(2, 1)  # (RGB, height, width)
+                t1 = (inputs[3:6] * 255.0).type(torch.uint8).transpose(2, 1)  # (RGB, height, width)
 
                 # Convert prediction to image
-                pred_img = pred.type(torch.uint8)
+                pred_img = pred.type(torch.uint8).transpose(2, 1)
                 pred_img = torch.cat((pred_img, pred_img, pred_img), 0) # Grayscale --> RGB
                 pred_img *= 255 # 1 --> 255
 
                 # Convert target to image
-                target_img = target.type(torch.uint8)
+                target_img = target.type(torch.uint8).transpose(2, 1)
                 target_img = torch.cat((target_img, target_img, target_img), 0) # Grayscale --> RGB
                 target_img *= 255 # 1 --> 255
 
@@ -147,7 +147,7 @@ class TANet(LightningModule):
                 input_images = torch.cat((t0, t1), 2)                   # Horizontal stack of inputs t0 and t1.
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
-            
+                
                 if LOG_IMG:
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption

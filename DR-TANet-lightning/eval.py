@@ -9,6 +9,8 @@ parser.add_argument("-i", dest="ckpt", required=True)
 args = parser.parse_args()
 parser.add_argument("-c", "--config", required=True,
 	help="path to YAML")
+parser.add_argument("-d", "--dataset", required=True,
+	help="TSUNAMI or GSV?")
 parsed_args = parser.parse_args()
 
 config_path = parsed_args.config
@@ -21,5 +23,5 @@ for set_nr in range(NUM_SETS):
                             map_location=None,
                             )
     trainer = Trainer(gpus=1)
-    data_module = PCDdataModule(set_nr)
+    data_module = PCDdataModule(set_nr, EVAL=parsed_args.dataset)
     trainer.test(model, data_module)
