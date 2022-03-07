@@ -9,20 +9,20 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from aim import Image
 from os.path import join as pjoin
-from params import dir_img
 from torchvision.utils import save_image
+import os
 
+dirname = os.path.dirname
+dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
 
 CHANNEL = 0
 NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, len_train_loader, DETERMINISTIC=False):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=False):
         super(TANet, self).__init__()
         self.DETERMINISTIC = DETERMINISTIC
-        self.len_train_loader = len_train_loader
-        self.set_ = 0
         self.save_hyperparameters()
         self.automatic_optimization = False
 
@@ -35,7 +35,6 @@ class TANet(LightningModule):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, img):
-        
         img_t0, img_t1 = torch.split(img, 3, 1)
         features_t0 = self.encoder1(img_t0)
         features_t1 = self.encoder2(img_t1)
@@ -88,11 +87,11 @@ class TANet(LightningModule):
         
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
-        scheduler = ReduceLROnPlateau(optimizer, "min")
+        scheduler = ReduceLROnPlateau(optimizer, "max")
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
-            'monitor': 'val_loss'
+            'monitor': 'f1-score'
             }
         
     def evaluation(self, batch, batch_idx, LOG_IMG=False):
@@ -104,7 +103,7 @@ class TANet(LightningModule):
         recall_tot = 0
         accuracy_tot = 0
         f1_score_tot = 0
-        val_loss = 0
+        #val_loss = 0
         
         for idx, (inputs, target) in enumerate(zip(inputs, mask)):
             
@@ -113,13 +112,13 @@ class TANet(LightningModule):
             pred = self(inputs_forward)
             pred = torch.squeeze(pred, dim=0)   # (1, RGB, height, width) --> (RGB, height, width)
             
-            val_loss += F.binary_cross_entropy_with_logits(pred, target)
+            # Compute validation loss
+            #val_loss += F.binary_cross_entropy_with_logits(pred, target)
             
             # Activation
             pred = torch.sigmoid(pred)
             pred[pred <= 0.5] = 0
             pred[pred > 0.5] = 1
-            target[target == 1] = 1
             target = target.int()
             
             # Calculate metrics
@@ -167,7 +166,7 @@ class TANet(LightningModule):
             'recall': recall_tot / current_batch_size,
             'accuracy': accuracy_tot / current_batch_size,
             'f1-score': f1_score_tot / current_batch_size,
-            'val_loss': val_loss / current_batch_size
+            #'val_loss': val_loss / current_batch_size
             }
         
         return metrics
