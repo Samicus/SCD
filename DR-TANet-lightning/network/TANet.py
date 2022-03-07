@@ -78,12 +78,11 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         log_img = False
-        if self.current_epoch % 5 == 0:
+        if self.logger and self.current_epoch % 5 == 0:
             log_img = True
-        if self.logger:
-            metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
-            self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
-            return metrics
+        metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
+        self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
+        return metrics
         
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))

@@ -1,6 +1,7 @@
 from network.TANet import TANet
 from data.DataModules import PCDdataModule
 from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
@@ -73,11 +74,11 @@ for set_nr in range(NUM_SETS):
         )
     else:
         aim_logger = None
-        
-   
+
+    early_stop_callback = EarlyStopping(monitor="f1-score", min_delta=0.00, patience=50, verbose=False, mode="max")
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback]
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=DETERMINISTIC)
