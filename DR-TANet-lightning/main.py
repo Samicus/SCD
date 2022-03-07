@@ -9,6 +9,7 @@ from datetime import datetime
 import torch
 import os
 from util import load_config
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
@@ -76,9 +77,17 @@ for set_nr in range(NUM_SETS):
         aim_logger = None
 
     early_stop_callback = EarlyStopping(monitor="f1-score", min_delta=0.00, patience=50, verbose=False, mode="max")
+    checkpoint_callback = ModelCheckpoint(
+        monitor="f1-score",
+        #dirpath="my/path/",
+        #filename="sample-mnist-{epoch:02d}-{val_loss:.2f}",
+        save_top_k=1,
+        save_last=True,
+        mode="max",
+    )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback]
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback, checkpoint_callback]
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=DETERMINISTIC)
