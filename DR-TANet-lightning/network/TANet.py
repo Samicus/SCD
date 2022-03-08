@@ -78,7 +78,7 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         log_img = False
-        if self.logger and self.current_epoch % 5 == 0:
+        if self.logger and self.current_epoch % 10 == 0:
             log_img = True
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)

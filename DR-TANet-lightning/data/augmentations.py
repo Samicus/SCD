@@ -1,4 +1,4 @@
-from random import random
+from random import random, choices, shuffle, uniform
 import numpy as np
 import cv2
 import math
@@ -87,7 +87,6 @@ class DataAugment:
 
     def apply_copy_paste(self):
         for i in range(len(self.img_t0_list)):
-            print(i)
             self.img_t0_list[i], self.img_t1_list[i], self.img_mask_list[i] = self.copy_paste(self.img_t0_list[i], 
                                                                                               self.img_t1_list[i], 
                                                                                               self.img_mask_list[i])
@@ -119,7 +118,7 @@ class DataAugment:
             img_mask = self.img_mask_list[i]
 
             # scale each image seperately
-            resize_factor = random.uniform(self.scale[0], self.scale[1])
+            resize_factor = uniform(self.scale[0], self.scale[1])
             h_orig, w_orig, _ = img_t0.shape
             img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
             img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
@@ -160,8 +159,8 @@ class DataAugment:
             # load 3 new images into lists
             nr_images = len(self.filename)
             indices = range(nr_images-1) 
-            indices = [self.index] + random.choices(indices, k=3) 
-            random.shuffle(indices)
+            indices = [self.index] + choices(indices, k=3) 
+            shuffle(indices)
 
             for idx in indices:
                 fn = self.filename[idx]
@@ -214,26 +213,26 @@ class DataAugment:
 
         # Perspective
         P = np.eye(3)
-        P[2, 0] = random.uniform(-perspective, perspective)  # x perspective (about y)
-        P[2, 1] = random.uniform(-perspective, perspective)  # y perspective (about x)
+        P[2, 0] = uniform(-perspective, perspective)  # x perspective (about y)
+        P[2, 1] = uniform(-perspective, perspective)  # y perspective (about x)
 
         # Rotation and Scale
         R = np.eye(3)
-        a = random.uniform(-degrees, degrees)
+        a = uniform(-degrees, degrees)
         if not degrees == 0 and random() >= .5:
             a += 180
-        s = random.uniform(1 - scale, 1)
+        s = uniform(1 - scale, 1)
         R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
         # Shear
         S = np.eye(3)
-        S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
-        S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
+        S[0, 1] = math.tan(uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
+        S[1, 0] = math.tan(uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
 
         # Translation
         T = np.eye(3)
-        T[0, 2] = random.uniform(0.5 - translate, 0.5 + translate) * width  # x translation (pixels)
-        T[1, 2] = random.uniform(0.5 - translate, 0.5 + translate) * height  # y translation (pixels)
+        T[0, 2] = uniform(0.5 - translate, 0.5 + translate) * width  # x translation (pixels)
+        T[1, 2] = uniform(0.5 - translate, 0.5 + translate) * height  # y translation (pixels)
 
         # Combined rotation matrix
         M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
@@ -325,11 +324,11 @@ class CopyPaste():
         h, w, _ = img_t0.shape
 
         #copy_t0 = transforms.Resize(size=(H, W))(self.instance)
-        resize_factor = random.uniform(self.scale[0], self.scale[1])
+        resize_factor = uniform(self.scale[0], self.scale[1])
         copy_t0 =   cv2.resize(copy_t0,   (int(resize_factor*w), int(resize_factor*h)))
         copy_t1 =   cv2.resize(copy_t1,   (int(resize_factor*w), int(resize_factor*h)))
         copy_mask = cv2.resize(copy_mask, (int(resize_factor*w), int(resize_factor*h)))
-        random_rotation = random.uniform(-self.rotation, self.rotation)
+        random_rotation = uniform(-self.rotation, self.rotation)
         copy_t0 = self.rotate_image(copy_t0, random_rotation)
         copy_t1 = self.rotate_image(copy_t1, random_rotation)
         
@@ -346,8 +345,8 @@ class CopyPaste():
         img_mask = np.asarray(img_mask)
 
         #Random positions for pasted images
-        h_start = np.random.randint(1,h-h_resized-1)
-        w_start = np.random.randint(1, w-w_resized-1)
+        h_start = np.random.randint(0, max(1, h - h_resized))
+        w_start = np.random.randint(0, max(1, w - w_resized))
         y1, y2 = h_start, h_start + h_resized
         x1, x2 = w_start, w_start + w_resized
 

@@ -5,7 +5,7 @@ MISC:
   NUM_WORKERS : 12
   BATCH_SIZE : 15
   NUM_SETS : 5
-  LOG_NAME : "no_augmentation"
+  LOG_NAME : "copy_paste"
   AUGMENT_ON : True
 
 HPARAMS:
