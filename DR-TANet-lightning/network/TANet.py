@@ -11,10 +11,9 @@ from aim import Image
 from os.path import join as pjoin
 from torchvision.utils import save_image
 import os
-import csv
 
 dirname = os.path.dirname
-dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
+dir_img = pjoin(dirname(dirname(dirname(__file__))), "ABLATION_RESULTS")
 
 CHANNEL = 0
 NUM_OUT_CHANNELS = 1
@@ -74,10 +73,6 @@ class TANet(LightningModule):
     
     def test_step(self, batch, batch_idx):
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=None)
-        with open('output.csv', 'wb') as output:
-            writer = csv.writer(output)
-            for key, value in metrics.iteritems():
-                writer.writerow([key, value])
         self.log_dict(metrics)
         return metrics
     

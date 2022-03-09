@@ -15,11 +15,11 @@ parser.add_argument("-c", "--configs", required=True,
 	help="path to configs")
 parser.add_argument("-d", "--dataset", required=True,
 	help="TSUNAMI or GSV?")
-parser.add_argument("-n", "--sets", required=True,
-	help="number of sets")
+parser.add_argument("-n", "--set", required=True,
+	help="set number")
 parsed_args = parser.parse_args()
 
-NUM_SETS = int(parsed_args.sets)
+SET_NUM = int(parsed_args.set)
 
 yaml_path = pjoin(parsed_args.configs, "**/{}.yaml".format(parsed_args.experiment))
 config_file = glob.glob(yaml_path)[0]
@@ -32,14 +32,12 @@ PRE_PROCESS = config["MISC"]["PRE_PROCESS"]
 NUM_WORKERS = config["MISC"]["NUM_WORKERS"]
 BATCH_SIZE = config["MISC"]["BATCH_SIZE"]
 
-
-for set_nr in range(NUM_SETS):
-    current_experiment = "{}_PCD_set{}".format(parsed_args.experiment, set_nr)
-    checkpoint = glob.glob(pjoin(parsed_args.checkpoints, current_experiment, "**/**/epoch=*"))[0]
-    model = TANet.load_from_checkpoint(
-                            checkpoint_path=checkpoint,
-                            map_location=None,
-                            )
-    trainer = Trainer(gpus=1)
-    data_module = PCDdataModule(set_nr, AUG_PARAMS, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL=parsed_args.dataset)
-    trainer.test(model, data_module)
+current_experiment = "{}_PCD_set{}".format(parsed_args.experiment, SET_NUM)
+checkpoint = glob.glob(pjoin(parsed_args.checkpoints, current_experiment, "**/**/epoch=*"))[0]
+model = TANet.load_from_checkpoint(
+                        checkpoint_path=checkpoint,
+                        map_location=None,
+                        )
+trainer = Trainer(gpus=1)
+data_module = PCDdataModule(SET_NUM, AUG_PARAMS, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL=parsed_args.dataset)
+trainer.test(model, data_module)
