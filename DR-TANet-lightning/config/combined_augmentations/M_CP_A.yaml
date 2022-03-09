@@ -1,0 +1,41 @@
+MISC:
+  PRE_PROCESS: "default"  # "default" or "paper"
+  PCD_CONFIG : "full" # "crop" or "full"
+  MAX_EPOCHS : 10000
+  NUM_WORKERS : 12
+  BATCH_SIZE : 15
+  NUM_SETS : 5
+  LOG_NAME : "M_CP_A"
+  AUGMENT_ON : True
+
+HPARAMS:
+
+  encoder_arch : 'resnet18'
+  local_kernel_size : 3
+  stride : 1
+  padding : 1
+  groups : 4
+  drtam : False
+  refinement : False
+
+AUGMENTATIONS:
+
+  MOSAIC:
+    mosaic_on : True
+    mosaic_th : 1.0
+    translate : 0.1
+    scale : [0.1, 1.0]
+    rotation : 45
+
+  RANDOM_ERASE:
+    random_erase_on : False
+    random_erase_th : 0.7
+
+  ALBUMENTATIONS:
+    albumentations_on : True
+
+  COPY_PASTE:
+    copy_paste_on : True
+    copy_paste_scale : [0.3, 1.0]
+    copy_paste_rotation : 180
+    copy_paste_th : 0.5
