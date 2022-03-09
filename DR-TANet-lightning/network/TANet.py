@@ -11,6 +11,7 @@ from aim import Image
 from os.path import join as pjoin
 from torchvision.utils import save_image
 import os
+import csv
 
 dirname = os.path.dirname
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
@@ -73,6 +74,10 @@ class TANet(LightningModule):
     
     def test_step(self, batch, batch_idx):
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=None)
+        with open('output.csv', 'wb') as output:
+            writer = csv.writer(output)
+            for key, value in metrics.iteritems():
+                writer.writerow([key, value])
         self.log_dict(metrics)
         return metrics
     
@@ -158,7 +163,7 @@ class TANet(LightningModule):
                         }
                     )
                 else:
-                    save_image(mask_images.type(torch.float), pjoin(dir_img, "pred_{}_batch_{}.png".format(idx, batch_idx)))
+                    save_image(mask_images.type(torch.float), pjoin(dir_img, self.lg, "pred_{}_batch_{}.png".format(idx, batch_idx)))
                 
         metrics = {
             'precision': precision_tot / current_batch_size,
