@@ -163,7 +163,7 @@ class TANet(LightningModule):
                         }
                     )
                 else:
-                    save_image(mask_images.type(torch.float), pjoin(dir_img, self.lg, "pred_{}_batch_{}.png".format(idx, batch_idx)))
+                    save_image(mask_images.type(torch.float), pjoin(dir_img, "pred_{}_batch_{}.png".format(idx, batch_idx)))
                 
         metrics = {
             'precision': precision_tot / current_batch_size,
