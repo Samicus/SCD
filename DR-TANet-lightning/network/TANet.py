@@ -13,7 +13,7 @@ from torchvision.utils import save_image
 import os
 
 dirname = os.path.dirname
-dir_img = pjoin(dirname(dirname(dirname(__file__))), "dir_img")
+dir_img = pjoin(dirname(dirname(dirname(__file__))), "ABLATION_RESULTS")
 
 CHANNEL = 0
 NUM_OUT_CHANNELS = 1
