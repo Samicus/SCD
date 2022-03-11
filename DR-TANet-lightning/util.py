@@ -5,6 +5,7 @@ from os.path import join as pjoin
 import torch
 import cv2
 import yaml
+from sklearn.metrics import confusion_matrix
 
 __all__ = ['Upsample', 'upsample']
 
