@@ -9,12 +9,13 @@ import albumentations as A
 
 
 class DataAugment:
-    def __init__(self, t0_root, t1_root, mask_root, filename, aug_params):
+    def __init__(self, t0_root, t1_root, mask_root, filename, aug_params, shape=(256, 256)):
         self.t0_root = t0_root
         self.t1_root = t1_root
         self.mask_root = mask_root
         self.filename = filename
         self.index = None
+        self.shape = shape
         
         self.transform1 = A.Compose([
                 A.RandomShadow(p=.5),
@@ -91,7 +92,7 @@ class DataAugment:
                                                                                               self.img_t1_list[i], 
                                                                                               self.img_mask_list[i])
 
-    def mosaic_augment(self, img_shape=(224,1024)):
+    def mosaic_augment(self):
         """
         Description:
             - This method augments an image using the mosaic augmentation method. It combines 4 images 
@@ -104,12 +105,14 @@ class DataAugment:
                     numpy ndarrays with the same output size as the original. 
             
         """
-
+        
+        img_shape = self.shape
+        
         s = img_shape[0]            
         s1 = img_shape[1]        
         mosaic_border = [-s//2 , -s1//2]
-        yc = 224  
-        xc = 1024 
+        yc = img_shape[0]
+        xc = img_shape[1]
         
         for i in range(4):
 

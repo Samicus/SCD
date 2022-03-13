@@ -1,12 +1,13 @@
 from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader, ConcatDataset
-from data.datasets import PCD
+from data.datasets import PCD, VL_CMU_CD
 import os
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "PCD")
 ROT_PCD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "rotated_PCD")
+VL_CMU_CD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "vl_cmu_cd_binary_mask")
 
 TSUNAMI_DIR = pjoin(PCD_DIR, "TSUNAMI")
 GSV_DIR = pjoin(PCD_DIR, "GSV")
@@ -48,6 +49,34 @@ class PCDdataModule(LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self.concat_data_val,
+                          num_workers=self.NUM_WORKERS,
+                          batch_size=self.BATCH_SIZE,
+                          shuffle=False)
+
+class VL_CMU_CD_DataModule(LightningDataModule):
+    def __init__(self, set_nr, aug_params, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE):
+        self.set_nr = set_nr
+        self.aug_params = aug_params
+        self.NUM_WORKERS = NUM_WORKERS
+        self.BATCH_SIZE = BATCH_SIZE
+        
+        self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "train"), self.aug_params, AUGMENT_ON)
+        self.VL_CMU_CD_test = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "test"), self.aug_params, AUGMENT_ON)
+        
+    def train_dataloader(self):
+        return  DataLoader(self.VL_CMU_CD,
+                           num_workers=self.NUM_WORKERS, 
+                           batch_size=self.BATCH_SIZE,
+                           shuffle=True)
+      
+    def test_dataloader(self):
+        return DataLoader(self.VL_CMU_CD,
+                          num_workers=self.NUM_WORKERS, 
+                          batch_size=self.BATCH_SIZE,
+                          shuffle=False)
+
+    def val_dataloader(self):
+        return DataLoader(self.VL_CMU_CD_test,
                           num_workers=self.NUM_WORKERS,
                           batch_size=self.BATCH_SIZE,
                           shuffle=False)

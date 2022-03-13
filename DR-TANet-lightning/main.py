@@ -1,11 +1,10 @@
 from network.TANet import TANet
-from data.DataModules import PCDdataModule
-from pytorch_lightning import Trainer, seed_everything
+from data.DataModules import PCDdataModule, VL_CMU_CD_DataModule
+from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
-from datetime import datetime
 import torch
 import os
 from util import load_config
@@ -23,6 +22,7 @@ parser.add_argument("-c", "--config", required=True,
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--det", action="store_true")
+parser.add_argument("--VL_CMU_CD", action="store_true")
 parsed_args = parser.parse_args()
 
 NUM_GPU = 1
@@ -61,14 +61,19 @@ refinement = hparams["refinement"]
 # Augmentation parameters
 aug_params = config["AUGMENTATIONS"]
 
-for set_nr in range(NUM_SETS):
+for set_nr in range(0, NUM_SETS):
     
-    data_module = PCDdataModule(set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
+    if parsed_args.VL_CMU_CD:
+        data_module = VL_CMU_CD_DataModule(set_nr, aug_params, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
+        DATASET = "VL_CMU_CD"
+    else:
+        data_module = PCDdataModule(set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
+        DATASET = "PCD"
     
     if parsed_args.aim:
         print("Logging data to AIM")
         aim_logger = AimLogger(
-        experiment='{}_PCD_set{}'.format(LOG_NAME, set_nr),
+        experiment='{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr),
         train_metric_prefix='train_',
         val_metric_prefix='val_',
         test_metric_prefix='test_'
@@ -87,7 +92,7 @@ for set_nr in range(NUM_SETS):
     )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback, checkpoint_callback]
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback, checkpoint_callback],
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=DETERMINISTIC)
