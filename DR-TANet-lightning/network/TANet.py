@@ -1,6 +1,6 @@
 from util import upsample
 from network.TANet_element import *
-from torchmetrics.functional import precision, recall, f1_score, accuracy
+from torchmetrics.functional import precision_recall
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
@@ -108,9 +108,7 @@ class TANet(LightningModule):
         target = mask.int()
         
         # Calculate metrics
-        precision_batch = precision(preds, target)
-        recall_batch = recall(preds, target)
-        accuracy_batch = accuracy(preds, target)
+        precision_batch, recall_batch = precision_recall(preds, target)
         f1_score_batch = 2.0 * precision_batch * recall_batch / (precision_batch + recall_batch)
         
         if LOG_IMG == True or LOG_IMG == None:
@@ -154,7 +152,6 @@ class TANet(LightningModule):
         metrics = {
             'precision': precision_batch,
             'recall': recall_batch,
-            'accuracy': accuracy_batch,
             'f1-score': f1_score_batch
             }
         
