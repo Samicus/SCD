@@ -108,8 +108,8 @@ class TANet(LightningModule):
         target = mask.int()
         
         # Calculate metrics
-        precision_batch = precision(preds, target, average=None)
-        recall_batch = recall(preds, target, average=None)
+        precision_batch = precision(preds, target)
+        recall_batch = recall(preds, target)
         accuracy_batch = accuracy(preds, target)
         f1_score_batch = 2.0 * precision_batch * recall_batch / (precision_batch + recall_batch)
         
