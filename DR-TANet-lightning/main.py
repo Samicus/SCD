@@ -74,11 +74,13 @@ for set_nr in range(0, NUM_SETS):
     else:
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
+
+    EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
     
     if parsed_args.aim:
         print("Logging data to AIM")
         aim_logger = AimLogger(
-        experiment='{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr),
+        experiment=EXPERIMENT_NAME,
         train_metric_prefix='train_',
         val_metric_prefix='val_',
         test_metric_prefix='test_'
@@ -100,5 +102,5 @@ for set_nr in range(0, NUM_SETS):
                       logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback, checkpoint_callback],
                       )
     
-    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=DETERMINISTIC)
+    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)

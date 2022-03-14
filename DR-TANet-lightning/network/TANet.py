@@ -20,9 +20,10 @@ NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, DETERMINISTIC=False):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=False):
         super(TANet, self).__init__()
         self.DETERMINISTIC = DETERMINISTIC
+        self.EXPERIMENT_NAME = EXPERIMENT_NAME
         self.save_hyperparameters()
         self.automatic_optimization = False
 
@@ -146,7 +147,9 @@ class TANet(LightningModule):
                         }
                     )
                 else:
-                    save_image(mask_images.type(torch.float), pjoin(dir_img, "pred_{}_batch_{}.png".format(idx, batch_idx)))
+                    save_to = pjoin(dir_img, self.EXPERIMENT_NAME)
+                    os.makedirs(save_to, exist_ok=True)
+                    save_image(mask_images.type(torch.float), pjoin(save_to, "pred_{}_batch_{}.png".format(idx, batch_idx)))
                 
         metrics = {
             'precision': precision_batch,
