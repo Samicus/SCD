@@ -1,0 +1,6 @@
+RUN:  
+  AUGMENT_ON : True
+  mosaic_on : True
+  copy_paste_on : False
+  random_erase_on : True
+  albumentations_on : True

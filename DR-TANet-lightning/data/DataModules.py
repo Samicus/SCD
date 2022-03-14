@@ -15,9 +15,9 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL="TSUNAMI"):
+    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL="TSUNAMI"):
         self.set_nr = set_nr
-        self.aug_params = aug_params
+        self.augmentations = augmentations
         self.NUM_WORKERS = NUM_WORKERS
         self.BATCH_SIZE = BATCH_SIZE
         
@@ -26,12 +26,12 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.aug_params, AUGMENT_ON, PCD_CONFIG)
-        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.aug_params, AUGMENT_ON, PCD_CONFIG)
+        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
+        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
         self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
-        TSUNAMI_val = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full")
-        GSV_val = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full")
+        TSUNAMI_val = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        GSV_val = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
         self.concat_data_val = ConcatDataset([TSUNAMI_val, GSV_val])
         
         self.test_dir = {"TSUNAMI": TSUNAMI_DIR, "GSV": GSV_DIR}[EVAL]
@@ -43,7 +43,7 @@ class PCDdataModule(LightningDataModule):
                            shuffle=True)
       
     def test_dataloader(self):
-        return DataLoader(PCD(pjoin(self.test_dir, "set{}".format(self.set_nr), "test"), AUG_PARAMS=self.aug_params, AUGMENT_ON=False, PCD_CONFIG="full"),
+        return DataLoader(PCD(pjoin(self.test_dir, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full"),
                                           num_workers=self.NUM_WORKERS, batch_size=self.BATCH_SIZE,
                                           shuffle=False)
 
@@ -54,14 +54,14 @@ class PCDdataModule(LightningDataModule):
                           shuffle=False)
 
 class VL_CMU_CD_DataModule(LightningDataModule):
-    def __init__(self, set_nr, aug_params, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE):
+    def __init__(self, set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE):
         self.set_nr = set_nr
-        self.aug_params = aug_params
+        self.augmentations = augmentations
         self.NUM_WORKERS = NUM_WORKERS
         self.BATCH_SIZE = BATCH_SIZE
         
-        self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "train"), self.aug_params, AUGMENT_ON)
-        self.VL_CMU_CD_test = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "test"), self.aug_params, AUGMENT_ON)
+        self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON)
+        self.VL_CMU_CD_test = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "test"), self.augmentations, AUGMENT_ON)
         
     def train_dataloader(self):
         return  DataLoader(self.VL_CMU_CD,

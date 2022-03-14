@@ -34,7 +34,16 @@ if parsed_args.det:
     DETERMINISTIC = True
     torch.use_deterministic_algorithms(True)
     
+# Run-specific augmentation parameters
 config_path = parsed_args.config
+augmentations = load_config(config_path)["RUN"]
+AUGMENT_ON = augmentations["AUGMENT_ON"]
+LOG_NAME = config_path.split('.')[0]
+
+# PCD or VL_CMU_CD settings
+config_path = "DR-TANet-lightning/config/PCD.yaml"
+if parsed_args.VL_CMU_CD:
+    config_path = "DR-TANet-lightning/config/VL_CMU_CD.yaml"
 config = load_config(config_path)
 hparams = config["HPARAMS"]
 misc = config["MISC"]
@@ -42,12 +51,10 @@ misc = config["MISC"]
 # Miscellaneous
 NUM_SETS = misc["NUM_SETS"]
 MAX_EPOCHS = misc["MAX_EPOCHS"]
-LOG_NAME = misc["LOG_NAME"]
 NUM_WORKERS = misc["NUM_WORKERS"]
 BATCH_SIZE = misc["BATCH_SIZE"]
 PRE_PROCESS = misc["PRE_PROCESS"]
 PCD_CONFIG = misc["PCD_CONFIG"]
-AUGMENT_ON = misc["AUGMENT_ON"]
 
 # Hyper Parameters
 encoder_arch = hparams["encoder_arch"]
@@ -58,16 +65,14 @@ groups = hparams["groups"]
 drtam = hparams["drtam"]
 refinement = hparams["refinement"]
 
-# Augmentation parameters
-aug_params = config["AUGMENTATIONS"]
 
 for set_nr in range(0, NUM_SETS):
     
     if parsed_args.VL_CMU_CD:
-        data_module = VL_CMU_CD_DataModule(set_nr, aug_params, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
+        data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
         DATASET = "VL_CMU_CD"
     else:
-        data_module = PCDdataModule(set_nr, aug_params, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
+        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
     
     if parsed_args.aim:

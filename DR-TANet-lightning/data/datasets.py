@@ -11,7 +11,7 @@ def check_validness(f):
 
 class PCD(Dataset):
 
-    def __init__(self, root, AUG_PARAMS, AUGMENT_ON, PCD_CONFIG):
+    def __init__(self, root, augmentations, AUGMENT_ON, PCD_CONFIG):
         super(PCD, self).__init__()
         
         self.img_t0_root = pjoin(root,'t0')
@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, AUG_PARAMS, shape=(256, 256))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(256, 256))
         self.PCD_CONFIG = PCD_CONFIG
         
     def __getitem__(self, index):
@@ -97,7 +97,7 @@ class PCD(Dataset):
 
 class VL_CMU_CD(Dataset):
 
-    def __init__(self, root, AUG_PARAMS, AUGMENT_ON):
+    def __init__(self, root, augmentations, AUGMENT_ON):
         super(VL_CMU_CD, self).__init__()
         self.img_t0_root = pjoin(root, 't0')
         self.img_t1_root = pjoin(root, 't1')
@@ -106,7 +106,7 @@ class VL_CMU_CD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, AUG_PARAMS, shape=(512, 512))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(512, 512))
 
     def __getitem__(self, index):
 

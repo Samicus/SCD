@@ -6,10 +6,11 @@ import os
 from os.path import join as pjoin, splitext as spt
 from PIL import Image
 import albumentations as A
+from util import load_config
 
 
 class DataAugment:
-    def __init__(self, t0_root, t1_root, mask_root, filename, aug_params, shape=(256, 256)):
+    def __init__(self, t0_root, t1_root, mask_root, filename, augmentations, shape=(256, 256)):
         self.t0_root = t0_root
         self.t1_root = t1_root
         self.mask_root = mask_root
@@ -25,31 +26,31 @@ class DataAugment:
         self.transform2 = A.Compose([
             A.HorizontalFlip(p=1),
             ])
-        
+
+        # Augmentation switches
+        self.copy_paste_on = augmentations["copy_paste_on"]
+        self.random_erase_on = augmentations["random_erase_on"]
+        self.mosaic_on = augmentations["mosaic_on"]
+        self.albumentations_on = augmentations["albumentations_on"]
+
         # Load Augmentation Parameters
+        aug_params = load_config("DR-TANet-lightning/config/augparams.yaml")
         mosaic_params = aug_params["MOSAIC"]
         random_erase_params = aug_params["RANDOM_ERASE"]
-        albumentation_params = aug_params["ALBUMENTATIONS"]
         copy_paste_params = aug_params["COPY_PASTE"]
-        
+
         # MOSAIC
-        self.mosaic_on = mosaic_params["mosaic_on"]
         self.mosaic_th = mosaic_params["mosaic_th"]
         self.translate = mosaic_params["translate"]
         self.scale = mosaic_params["scale"]
         self.rotation = mosaic_params["rotation"]
         
         # Random Erase
-        self.random_erase_on = random_erase_params["random_erase_on"]
         self.random_erase_th = random_erase_params["random_erase_th"]
-        
-        # Albumentations
-        self.albumentations_on = albumentation_params["albumentations_on"]
-        
+
         # Copy Paste
         copy_paste_scale = copy_paste_params["copy_paste_scale"]
         copy_paste_rotation = copy_paste_params["copy_paste_rotation"]
-        self.copy_paste_on = copy_paste_params["copy_paste_on"]
         self.copy_paste_th = copy_paste_params["copy_paste_th"]
         self.copy_paste = CopyPaste(t0_root, t1_root, mask_root, filename, scale=[copy_paste_scale[0],copy_paste_scale[1]], rotation=copy_paste_rotation)
 

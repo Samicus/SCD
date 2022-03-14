@@ -1,0 +1,16 @@
+MISC:
+  PRE_PROCESS: "default"  # "default" or "paper"
+  PCD_CONFIG : "full" # "crop" or "full"
+  MAX_EPOCHS : 150
+  NUM_WORKERS : 12
+  BATCH_SIZE : 8
+  NUM_SETS : 5
+
+HPARAMS:
+  encoder_arch : 'resnet18'
+  local_kernel_size : 3
+  stride : 1
+  padding : 1
+  groups : 4
+  drtam : True
+  refinement : True
