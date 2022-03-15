@@ -58,7 +58,7 @@ class TANet(LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         
-        train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train)
+        train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train, pos_weight=torch.tensor(4))
         
         if self.DETERMINISTIC:
             torch.use_deterministic_algorithms(False)
@@ -79,7 +79,8 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         log_img = False
-        if self.logger and self.current_epoch % 10 == 0:
+        #if self.logger and self.current_epoch % 10 == 0:
+        if self.logger:
             log_img = True
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
@@ -134,7 +135,8 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                if LOG_IMG and batch_idx % 50 == 0:
+                #if LOG_IMG and batch_idx % 50 == 0:
+                if LOG_IMG:
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
                         name="val_batch_{}".format(batch_idx),  # The name of image set
