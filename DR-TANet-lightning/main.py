@@ -38,7 +38,7 @@ if parsed_args.det:
 config_path = parsed_args.config
 augmentations = load_config(config_path)["RUN"]
 AUGMENT_ON = augmentations["AUGMENT_ON"]
-LOG_NAME = config_path.split('.')[0]
+LOG_NAME = config_path.split('.')[0].split('/')[-1]
 
 # PCD or VL_CMU_CD settings
 config_path = "DR-TANet-lightning/config/PCD.yaml"
@@ -65,15 +65,16 @@ groups = hparams["groups"]
 drtam = hparams["drtam"]
 refinement = hparams["refinement"]
 
-
 for set_nr in range(0, NUM_SETS):
     
     if parsed_args.VL_CMU_CD:
         data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
         DATASET = "VL_CMU_CD"
+        WEIGHT = torch.tensor(4)
     else:
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
+        WEIGHT = torch.tensor(1)
 
     EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
     
@@ -99,8 +100,10 @@ for set_nr in range(0, NUM_SETS):
     )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[early_stop_callback, checkpoint_callback],
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback,
+                                                                                 #early_stop_callback
+                                                                                 ]
                       )
     
-    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
+    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)

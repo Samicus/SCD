@@ -1,9 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from os.path import join as pjoin
-import torch
-import cv2
 import yaml
 from sklearn.metrics import confusion_matrix
 
@@ -44,23 +41,13 @@ class Upsample(nn.Module):
         return x
 
 def cal_metrics(pred,target):
+    
+    TN, FP, FN, TP = confusion_matrix(np.matrix.flatten(pred), np.matrix.flatten(target)).ravel()
 
-    temp = np.dstack((pred == 255, target == 255))
-    TP = sum(sum(np.all(temp, axis=2)))
-
-    temp = np.dstack((pred == 255, target == 0))
-    FP = sum(sum(np.all(temp, axis=2)))
-
-    temp = np.dstack((pred == 0, target == 255))
-    FN = sum(sum(np.all(temp, axis=2)))
-
-    temp = np.dstack((pred == 0, target == 0))
-    TN = sum(sum(np.all(temp, axis=2)))
-
-    precision = TP / (TP + FP + 1e-8)
-    recall = TP / (TP + FN + 1e-8)
-    accuracy = (TP + TN) / (TP + FP + FN + TN + 1e-8)
-    f1_score = 2 * recall * precision / (precision + recall + 1e-8)
+    precision = TP / (TP + FP) if (TP + FP) != 0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) != 0 else 0.0
+    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0 else 0.0
+    f1_score = 2.0 * recall * precision / (precision + recall) if (precision + recall) != 0 else 0.0
 
     return precision, recall, accuracy, f1_score
     

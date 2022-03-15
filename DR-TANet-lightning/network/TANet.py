@@ -1,6 +1,6 @@
+from doctest import SKIP
 from util import upsample
 from network.TANet_element import *
-from torchmetrics.functional import precision_recall
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
 import torch.nn as nn
@@ -11,6 +11,7 @@ from aim import Image
 from os.path import join as pjoin
 from torchvision.utils import save_image
 import os
+from util import cal_metrics
 
 dirname = os.path.dirname
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "ABLATION_RESULTS")
@@ -20,10 +21,11 @@ NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=False):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=False):
         super(TANet, self).__init__()
-        self.DETERMINISTIC = DETERMINISTIC
         self.EXPERIMENT_NAME = EXPERIMENT_NAME
+        self.WEIGHT = WEIGHT
+        self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False
 
@@ -58,7 +60,7 @@ class TANet(LightningModule):
         inputs_train, mask_train = batch
         output_train = self(inputs_train)
         
-        train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train, pos_weight=torch.tensor(4))
+        train_loss = F.binary_cross_entropy_with_logits(output_train, mask_train, pos_weight=self.WEIGHT)
         
         if self.DETERMINISTIC:
             torch.use_deterministic_algorithms(False)
@@ -79,8 +81,7 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         log_img = False
-        #if self.logger and self.current_epoch % 10 == 0:
-        if self.logger:
+        if self.logger and self.current_epoch % 10 == 0:
             log_img = True
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
@@ -97,24 +98,36 @@ class TANet(LightningModule):
         
     def evaluation(self, batch, batch_idx, LOG_IMG=False):
         
-        inputs, mask = batch
+        inputs_test, mask_test = batch
+        mask_test = mask_test.int()
+        current_batch_size = len(inputs_test)
         
-        # Forward propagation
-        output = self(inputs)
-        
-        # Activation
-        preds = torch.sigmoid(output)
-        preds[preds <= 0.5] = 0
-        preds[preds > 0.5] = 1
-        target = mask.int()
-        
-        # Calculate metrics
-        precision_batch, recall_batch = precision_recall(preds, target)
-        f1_score_batch = 2.0 * precision_batch * recall_batch / (precision_batch + recall_batch)
-        
-        if LOG_IMG == True or LOG_IMG == None:
+        precision_tot = 0
+        recall_tot = 0
+        accuracy_tot = 0
+        f1_score_tot = 0
             
-            for idx, (inputs, pred, target) in enumerate(zip(inputs, preds, mask)):
+        for idx, (inputs, target) in enumerate(zip(inputs_test, mask_test)):
+            
+            # Forward propagation
+            inputs_forward = torch.unsqueeze(inputs, dim=0)
+            pred = self(inputs_forward)
+            pred = torch.squeeze(pred, dim=0)
+            
+            # Activation
+            pred = torch.sigmoid(pred)
+            pred[pred <= 0.5] = 0
+            pred[pred > 0.5] = 1
+            
+            # Calculate metrics
+            precision, recall, accuracy, f1_score = cal_metrics(pred.cpu().numpy(), target.cpu().numpy())
+            
+            precision_tot += torch.tensor(precision)
+            recall_tot += torch.tensor(recall)
+            accuracy_tot += torch.tensor(accuracy)
+            f1_score_tot += torch.tensor(f1_score)
+            
+            if LOG_IMG == True or LOG_IMG == None:
                 
                 # Convert input to image
                 t0 = (inputs[0:3] * 255.0).type(torch.uint8).transpose(2, 1)  # (RGB, height, width)
@@ -135,8 +148,11 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                #if LOG_IMG and batch_idx % 50 == 0:
-                if LOG_IMG:
+                SKIP_SAVE = 0
+                if "VL_CMU_CD" in self.EXPERIMENT_NAME:
+                    SKIP_SAVE = 50
+                
+                if LOG_IMG and batch_idx % SKIP_SAVE == 0:
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
                         name="val_batch_{}".format(batch_idx),  # The name of image set
@@ -152,9 +168,10 @@ class TANet(LightningModule):
                     save_image(mask_images.type(torch.float), pjoin(save_to, "pred_{}_batch_{}.png".format(idx, batch_idx)))
                 
         metrics = {
-            'precision': precision_batch,
-            'recall': recall_batch,
-            'f1-score': f1_score_batch
+            'precision': precision_tot / current_batch_size,
+            'recall': recall_tot / current_batch_size,
+            "accuracy": accuracy_tot / current_batch_size,
+            'f1-score': f1_score_tot / current_batch_size
             }
         
         return metrics

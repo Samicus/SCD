@@ -1,7 +1,7 @@
 MOSAIC:
   mosaic_th : 1
   translate : 0.1
-  scale : [0.1, 1.9]  #0.1, 1.0    0.5 1.5
+  scale : [0.1, 1.0]  #0.1, 1.9     0.1, 1.0      0.5 1.5
   rotation : 0
 
 RANDOM_ERASE:
