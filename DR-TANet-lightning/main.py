@@ -97,8 +97,8 @@ for set_nr in range(0, NUM_SETS):
     )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback,
-                                                                                 ]
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
+                      check_val_every_n_epoch=10
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)

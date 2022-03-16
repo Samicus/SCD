@@ -2,8 +2,8 @@ MISC:
   PRE_PROCESS: "-"  # "default" or "paper"
   PCD_CONFIG : "-" # "crop" or "full"
   MAX_EPOCHS : 150
-  NUM_WORKERS : 8
-  BATCH_SIZE : 4
+  NUM_WORKERS : 12
+  BATCH_SIZE : 7
   NUM_SETS : 1
 
 HPARAMS:
@@ -12,5 +12,5 @@ HPARAMS:
   stride : 1
   padding : 1
   groups : 4
-  drtam : False
+  drtam : True
   refinement : False

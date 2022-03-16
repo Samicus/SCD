@@ -81,7 +81,7 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         log_img = False
-        if self.logger and self.current_epoch % 10 == 0:
+        if self.logger:
             log_img = True
         metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
@@ -147,11 +147,7 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                SKIP_SAVE = 1
-                if "VL_CMU_CD" in self.EXPERIMENT_NAME:
-                    SKIP_SAVE = 50
-                
-                if LOG_IMG and batch_idx % SKIP_SAVE == 0:
+                if LOG_IMG and not "VL_CMU_CD" in self.EXPERIMENT_NAME:
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
                         name="val_batch_{}".format(batch_idx),  # The name of image set
