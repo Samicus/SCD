@@ -8,6 +8,7 @@ dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "PCD")
 ROT_PCD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "rotated_PCD")
 VL_CMU_CD_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "vl_cmu_cd_binary_mask")
+VL_CMU_CD_SMALL_DIR = pjoin(dirname(dirname(dirname(dirname(__file__)))), "vl_cmu_cd_binary_mask_small")
 
 TSUNAMI_DIR = pjoin(PCD_DIR, "TSUNAMI")
 GSV_DIR = pjoin(PCD_DIR, "GSV")
@@ -64,6 +65,7 @@ class VL_CMU_CD_DataModule(LightningDataModule):
         
         self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON)
         self.VL_CMU_CD_test = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "test"), self.augmentations, AUGMENT_ON)
+        self.VL_CMU_CD_val = VL_CMU_CD(pjoin(VL_CMU_CD_SMALL_DIR, "set{}".format(self.set_nr), "test"), self.augmentations, AUGMENT_ON)
         
     def train_dataloader(self):
         return  DataLoader(self.VL_CMU_CD,
@@ -78,7 +80,7 @@ class VL_CMU_CD_DataModule(LightningDataModule):
                           shuffle=False)
 
     def val_dataloader(self):
-        return DataLoader(self.VL_CMU_CD_test,
+        return DataLoader(self.VL_CMU_CD_val,
                           num_workers=self.NUM_WORKERS,
                           batch_size=self.BATCH_SIZE,
                           shuffle=False)
