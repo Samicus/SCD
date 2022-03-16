@@ -89,11 +89,8 @@ for set_nr in range(0, NUM_SETS):
     else:
         aim_logger = None
 
-    early_stop_callback = EarlyStopping(monitor="f1-score", min_delta=0.00, patience=50, verbose=False, mode="max")
     checkpoint_callback = ModelCheckpoint(
         monitor="f1-score",
-        #dirpath="my/path/",
-        #filename="sample-mnist-{epoch:02d}-{val_loss:.2f}",
         save_top_k=1,
         save_last=True,
         mode="max",
@@ -101,7 +98,6 @@ for set_nr in range(0, NUM_SETS):
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
                       logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback,
-                                                                                 #early_stop_callback
                                                                                  ]
                       )
     

@@ -121,11 +121,10 @@ class TANet(LightningModule):
             
             # Calculate metrics
             precision, recall, accuracy, f1_score = cal_metrics(pred.cpu().numpy(), target.cpu().numpy())
-            
-            precision_tot += torch.tensor(precision)
-            recall_tot += torch.tensor(recall)
-            accuracy_tot += torch.tensor(accuracy)
-            f1_score_tot += torch.tensor(f1_score)
+            precision_tot += precision
+            recall_tot += recall
+            accuracy_tot += accuracy
+            f1_score_tot += f1_score
             
             if LOG_IMG == True or LOG_IMG == None:
                 
@@ -148,7 +147,7 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                SKIP_SAVE = 0
+                SKIP_SAVE = 1
                 if "VL_CMU_CD" in self.EXPERIMENT_NAME:
                     SKIP_SAVE = 50
                 
