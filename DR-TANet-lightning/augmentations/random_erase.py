@@ -9,8 +9,8 @@ def random_erase_augment(img_t0, img_t1, img_mask, WIDTH_DIV=2.0, HEIGHT_DIV=2.0
     HEIGHT_THRESHOLD = h / HEIGHT_DIV
     
     # Random width and height of erased area
-    erase_width = np.random.randint(WIDTH_THRESHOLD / 2, WIDTH_THRESHOLD)
-    erase_height = np.random.randint(HEIGHT_THRESHOLD / 2, HEIGHT_THRESHOLD)
+    erase_width = np.random.randint(WIDTH_THRESHOLD / 4.0, WIDTH_THRESHOLD)
+    erase_height = np.random.randint(HEIGHT_THRESHOLD / 4.0, HEIGHT_THRESHOLD)
     
     # Random horizontal positioning of erased area
     x_pos_left = np.random.randint(0, w - erase_width)

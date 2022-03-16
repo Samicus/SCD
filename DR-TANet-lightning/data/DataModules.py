@@ -26,29 +26,31 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
-        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
-        self.concat_data = ConcatDataset([TSUNAMI, GSV])
+        self.TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
+        #GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
+        #self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
-        TSUNAMI_val = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
-        GSV_val = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
-        self.concat_data_val = ConcatDataset([TSUNAMI_val, GSV_val])
+        self.TSUNAMI_test = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        #GSV_val = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        #self.concat_data_val = ConcatDataset([TSUNAMI_val, GSV_val])
         
-        self.test_dir = {"TSUNAMI": TSUNAMI_DIR, "GSV": GSV_DIR}[EVAL]
+        #self.test_dir = {"TSUNAMI": TSUNAMI_DIR, "GSV": GSV_DIR}[EVAL]
+        self.test_dir =pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test")
         
     def train_dataloader(self):
-        return  DataLoader(self.concat_data,
+        return  DataLoader(self.TSUNAMI,
                            num_workers=self.NUM_WORKERS, 
                            batch_size=self.BATCH_SIZE,
                            shuffle=True)
       
     def test_dataloader(self):
-        return DataLoader(PCD(pjoin(self.test_dir, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full"),
-                                          num_workers=self.NUM_WORKERS, batch_size=self.BATCH_SIZE,
-                                          shuffle=False)
+        return DataLoader(self.TSUNAMI_test,
+                          num_workers=self.NUM_WORKERS,
+                          batch_size=self.BATCH_SIZE,
+                          shuffle=False)
 
     def val_dataloader(self):
-        return DataLoader(self.concat_data_val,
+        return DataLoader(self.TSUNAMI_test,
                           num_workers=self.NUM_WORKERS,
                           batch_size=self.BATCH_SIZE,
                           shuffle=False)

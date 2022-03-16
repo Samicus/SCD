@@ -1,13 +1,16 @@
 MOSAIC:
-  mosaic_th : 1
+  mosaic_th : 1.0
   translate : 0.1
-  scale : [0.5, 1.0]
+  scale : [0.4, 1.6]
   rotation : 0
 
-RANDOM_ERASE:
-  random_erase_th : 0.5
-
 COPY_PASTE:
-  copy_paste_scale : [0.5, 1.0]
+  copy_paste_scale : [0.4, 1.6]
   copy_paste_rotation : 180
-  copy_paste_th : 0.5
+  copy_paste_th : 1.0
+
+RANDOM_ERASE:
+  random_erase_th : 1.0
+
+ALBUMENTATIONS:
+  albumentations_th : 1.0
