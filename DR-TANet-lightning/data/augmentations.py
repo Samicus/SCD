@@ -17,10 +17,16 @@ class DataAugment:
         self.filename = filename
         self.index = None
         self.shape = shape
+
+        random_shadow_p = .5
+        color_jitter_p = .5
+        if trial:
+            random_shadow_p = trial.suggest_uniform("random_shadow_threshold", 0.0, 1.0)
+            color_jitter_p = trial.suggest_uniform("color_jitter_threshold", 0.0, 1.0)
         
         self.transform1 = A.Compose([
-                A.RandomShadow(p=.5),
-                A.ColorJitter(p=.5)
+                A.RandomShadow(p=random_shadow_p),
+                A.ColorJitter(p=color_jitter_p)
                 ])
         
         self.transform2 = A.Compose([
@@ -45,7 +51,7 @@ class DataAugment:
             self.mosaic_th = trial.suggest_uniform("mosaic_threshold", 0.0, 1.0)
             self.translate = trial.suggest_uniform("mosaic_translate", 0.0, 1.0)
             self.scale = trial.suggest_uniform("mosaic_scale", 0.0, 0.99)
-            self.rotation = mosaic_params["rotation"]
+            self.rotation = trial.suggest_int("mosaic_rotation", 0, 90)
             
             # Random Erase
             self.random_erase_th = trial.suggest_uniform("random_erase_threshold", 0.0, 1.0)
@@ -247,7 +253,7 @@ class DataAugment:
         # Rotation and Scale
         R = np.eye(3)
         a = uniform(-degrees, degrees)
-        if not degrees == 0 and random() >= .5:
+        if (not degrees == 0) and (random() >= .5):
             a += 180
         s = 1.0
         R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)

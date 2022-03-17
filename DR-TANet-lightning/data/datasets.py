@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(256, 256))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024))
         self.PCD_CONFIG = PCD_CONFIG
         
     def __getitem__(self, index):

@@ -3,7 +3,7 @@ MISC:
   PCD_CONFIG : "-" # "crop" or "full"
   MAX_EPOCHS : 150
   NUM_WORKERS : 8
-  BATCH_SIZE : 2
+  BATCH_SIZE : 6
   NUM_SETS : 1
 
 HPARAMS:
