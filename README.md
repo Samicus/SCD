@@ -5,7 +5,4 @@ Master Thesis project
 PYTHON-PATH -m pip install -r requirements.txt
 
 # Accessing Aim-Logger when Training on Remote
-ssh -L AAAA:ip:BBBB  user@ip
-When opening http://localhost:AAAA/ on local computer it will connect to the remote port BBBB. AAAA and BBBB can be the same.
-
 ssh -L 43800:127.0.0.1:43800 user@ip
