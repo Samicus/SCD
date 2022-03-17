@@ -63,7 +63,7 @@ class VL_CMU_CD_DataModule(LightningDataModule):
         self.NUM_WORKERS = NUM_WORKERS
         self.BATCH_SIZE = BATCH_SIZE
         
-        self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON)
+        self.VL_CMU_CD = VL_CMU_CD(pjoin(VL_CMU_CD_SMALL_DIR, "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON)
         self.VL_CMU_CD_test = VL_CMU_CD(pjoin(VL_CMU_CD_DIR, "set{}".format(self.set_nr), "test"), self.augmentations, AUGMENT_ON)
         self.VL_CMU_CD_val = VL_CMU_CD(pjoin(VL_CMU_CD_SMALL_DIR, "set{}".format(self.set_nr), "test"), self.augmentations, AUGMENT_ON)
         

@@ -147,7 +147,7 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                if LOG_IMG and not "VL_CMU_CD" in self.EXPERIMENT_NAME:
+                if LOG_IMG:
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
                         name="val_batch_{}".format(batch_idx),  # The name of image set
