@@ -1,7 +1,6 @@
 from network.TANet import TANet
-from data.DataModules import PCDdataModule, VL_CMU_CD_DataModule
+from data.DataModules import VL_CMU_CD_DataModule
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
@@ -10,7 +9,9 @@ import os
 from util import load_config
 from pytorch_lightning.callbacks import ModelCheckpoint
 from optuna.integration import PyTorchLightningPruningCallback
-from optuna impor trial
+from optuna.trial import Trial
+import optuna
+from optuna.pruners import BasePruner
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
@@ -24,7 +25,6 @@ parser.add_argument("-c", "--config", required=True,
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--det", action="store_true")
-parser.add_argument("--VL_CMU_CD", action="store_true")
 parsed_args = parser.parse_args()
 
 NUM_GPU = 1
@@ -42,10 +42,7 @@ augmentations = load_config(config_path)["RUN"]
 AUGMENT_ON = augmentations["AUGMENT_ON"]
 LOG_NAME = config_path.split('.')[0].split('/')[-1]
 
-# PCD or VL_CMU_CD settings
-config_path = "DR-TANet-lightning/config/PCD.yaml"
-if parsed_args.VL_CMU_CD:
-    config_path = "DR-TANet-lightning/config/VL_CMU_CD.yaml"
+config_path = "DR-TANet-lightning/config/VL_CMU_CD.yaml"
 config = load_config(config_path)
 hparams = config["HPARAMS"]
 misc = config["MISC"]
@@ -66,42 +63,50 @@ padding = hparams["padding"]
 groups = hparams["groups"]
 drtam = hparams["drtam"]
 refinement = hparams["refinement"]
-
-for set_nr in range(0, NUM_SETS):
     
-    if parsed_args.VL_CMU_CD:
-        data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
-        DATASET = "VL_CMU_CD"
-        WEIGHT = torch.tensor(4)
-    else:
-        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
-        DATASET = "PCD"
-        WEIGHT = torch.tensor(1)
-
-    EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
+def objective(trial: Trial):
     
-    if parsed_args.aim:
-        print("Logging data to AIM")
-        aim_logger = AimLogger(
-        experiment=EXPERIMENT_NAME,
+    checkpoint_callback = ModelCheckpoint(
+        os.path.join(CHECKPOINT_DIR, "trial_{}".format(trial.number)), monitor="f1-score"
+    )
+    
+    aim_logger = AimLogger(
+        experiment="trial_{}".format(trial.number),
         train_metric_prefix='train_',
         val_metric_prefix='val_',
         test_metric_prefix='test_'
         )
-    else:
-        aim_logger = None
-
-    checkpoint_callback = ModelCheckpoint(
-        monitor="f1-score",
-        save_top_k=1,
-        save_last=True,
-        mode="max",
+    
+    trainer = Trainer(
+        logger=aim_logger,
+        checkpoint_callback=checkpoint_callback,
+        max_epochs=MAX_EPOCHS,
+        gpus=1 if torch.cuda.is_available() else None,
+        callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
+        #fast_dev_run=True   # DEBUG
     )
-    trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
-                      default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
-                      check_val_every_n_epoch=10
-                      )
+    
+    data_module = VL_CMU_CD_DataModule(0, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial)
+    DATASET = "VL_CMU_CD"
+    WEIGHT = torch.tensor(4)
+    
+    EXPERIMENT_NAME = '{}_{}_trial_{}'.format(LOG_NAME, DATASET, trial.number)
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)
+    
+    return trainer.logged_metrics["f1-score"]
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=100, timeout=1200)
+
+print("Number of finished trials: {}".format(len(study.trials)))
+
+print("Best trial:")
+trial = study.best_trial
+
+print("  Value: {}".format(trial.value))
+
+print("  Params: ")
+for key, value in trial.params.items():
+    print("    {}: {}".format(key, value))

@@ -1,11 +1,11 @@
 MOSAIC:
   mosaic_th : 1.0
   translate : 0.1
-  scale : [0.4, 1.6]
+  scale : 0.5 # +-
   rotation : 0
 
 COPY_PASTE:
-  copy_paste_scale : [0.4, 1.6]
+  copy_paste_scale : 0.5
   copy_paste_rotation : 180
   copy_paste_th : 1.0
 

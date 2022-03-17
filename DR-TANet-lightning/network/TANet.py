@@ -28,7 +28,8 @@ class TANet(LightningModule):
         self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False
-
+        
+        # Network Layers
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
         self.attention_module = get_attentionmodule(local_kernel_size, stride, padding, groups, drtam, refinement, channels)

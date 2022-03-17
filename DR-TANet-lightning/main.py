@@ -13,8 +13,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
 ROT_PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "rotated_PCD")
-CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", required=True,
@@ -96,7 +94,6 @@ for set_nr in range(0, NUM_SETS):
         mode="max",
     )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
-                      default_root_dir=pjoin(CHECKPOINT_DIR,"set{}".format(set_nr)),
                       logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
                       check_val_every_n_epoch=10
                       )
