@@ -1,5 +1,5 @@
 from network.TANet import TANet
-from data.DataModules import VL_CMU_CD_DataModule
+from data.DataModules import PCDdataModule
 from pytorch_lightning import Trainer
 from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
@@ -42,7 +42,7 @@ augmentations = load_config(config_path)["RUN"]
 AUGMENT_ON = augmentations["AUGMENT_ON"]
 LOG_NAME = config_path.split('.')[0].split('/')[-1]
 
-config_path = "DR-TANet-lightning/config/VL_CMU_CD.yaml"
+config_path = "DR-TANet-lightning/config/PCD.yaml"
 config = load_config(config_path)
 hparams = config["HPARAMS"]
 misc = config["MISC"]
@@ -86,9 +86,9 @@ def objective(trial: Trial):
         #fast_dev_run=True   # DEBUG
     )
     
-    data_module = VL_CMU_CD_DataModule(0, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial)
-    DATASET = "VL_CMU_CD"
-    WEIGHT = torch.tensor(4)
+    data_module = PCDdataModule(4, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial)
+    DATASET = "PCD"
+    WEIGHT = torch.tensor(2)
     
     EXPERIMENT_NAME = '{}_{}_trial_{}'.format(LOG_NAME, DATASET, trial.number)
     

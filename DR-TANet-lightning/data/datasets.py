@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(256, 256))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024))    # (height, width)
         self.PCD_CONFIG = PCD_CONFIG
         
     def __getitem__(self, index):
@@ -55,7 +55,7 @@ class PCD(Dataset):
         # Normalization
         img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
         img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
-        mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 1, 0)     # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask[:, :, np.newaxis]>0).astype('f').transpose(2, 1, 0)       # -- > (RGB, height, width)
         
         # Cropped or full images
         if self.PCD_CONFIG == "crop":
@@ -138,7 +138,7 @@ class VL_CMU_CD(Dataset):
         # Normalization
         img_t0_r = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
         img_t1_r = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
-        mask_r = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 1, 0)     # -- > (RGB, height, width)
+        mask_r = np.asarray(mask[:, :, np.newaxis]>0).astype('f').transpose(2, 1, 0)     # -- > (RGB, height, width)
         
         input_ = np.concatenate((img_t0_r, img_t1_r))
         mask_ = mask_r
