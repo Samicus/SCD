@@ -11,7 +11,7 @@ def check_validness(f):
 
 class PCD(Dataset):
 
-    def __init__(self, root, augmentations, AUGMENT_ON, PCD_CONFIG):
+    def __init__(self, root, augmentations, AUGMENT_ON, PCD_CONFIG, trial=None):
         super(PCD, self).__init__()
         
         self.img_t0_root = pjoin(root,'t0')
@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024))    # (height, width)
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024), trial=trial)    # (height, width)
         self.PCD_CONFIG = PCD_CONFIG
         
     def __getitem__(self, index):

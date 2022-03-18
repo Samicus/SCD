@@ -12,6 +12,7 @@ from os.path import join as pjoin
 from torchvision.utils import save_image
 import os
 from util import cal_metrics
+from torchmetrics.functional import f1_score, accuracy, precision, recall
 
 dirname = os.path.dirname
 dir_img = pjoin(dirname(dirname(dirname(__file__))), "ABLATION_RESULTS")
@@ -84,7 +85,11 @@ class TANet(LightningModule):
         log_img = False
         if self.logger:
             log_img = True
-        metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
+        
+        if ("trial" in self.EXPERIMENT_NAME):
+            metrics = self.evaluate_batch(batch, batch_idx)
+        else:
+            metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
         return metrics
         
@@ -168,6 +173,31 @@ class TANet(LightningModule):
             'recall': recall_tot / current_batch_size,
             "accuracy": accuracy_tot / current_batch_size,
             'f1-score': f1_score_tot / current_batch_size
+            }
+        
+        return metrics
+
+    def evaluate_batch(self, batch, batch_idx):
+        
+        inputs_test, mask_test = batch
+        preds = self(inputs_test)
+        mask_test = mask_test.int()
+
+        # Activation
+        preds = torch.sigmoid(preds)
+        preds[preds > 0.5] = 1
+        preds[preds <= 0.5] = 0
+
+        precision_batch = precision(preds, mask_test)
+        recall_batch = recall(preds, mask_test)
+        accuracy_batch = accuracy(preds, mask_test)
+        f1_score_batch = f1_score(preds, mask_test)
+
+        metrics = {
+            'precision': precision_batch,
+            'recall': recall_batch,
+            "accuracy": accuracy_batch,
+            'f1-score': f1_score_batch
             }
         
         return metrics

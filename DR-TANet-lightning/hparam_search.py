@@ -12,6 +12,16 @@ from optuna.integration import PyTorchLightningPruningCallback
 from optuna.trial import Trial
 import optuna
 from optuna.pruners import BasePruner
+from optuna.visualization.matplotlib import plot_contour
+from optuna.visualization.matplotlib import plot_edf
+from optuna.visualization.matplotlib import plot_intermediate_values
+from optuna.visualization.matplotlib import plot_optimization_history
+from optuna.visualization.matplotlib import plot_parallel_coordinate
+from optuna.visualization.matplotlib import plot_param_importances
+from optuna.visualization.matplotlib import plot_slice
+from matplotlib import pyplot as plt
+import logging
+import sys
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
@@ -83,12 +93,13 @@ def objective(trial: Trial):
         max_epochs=MAX_EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
+        log_every_n_steps=5
         #fast_dev_run=True   # DEBUG
     )
     
-    data_module = PCDdataModule(4, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial)
+    data_module = PCDdataModule(4, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial)
     DATASET = "PCD"
-    WEIGHT = torch.tensor(2)
+    WEIGHT = torch.tensor(2.52)
     
     EXPERIMENT_NAME = '{}_{}_trial_{}'.format(LOG_NAME, DATASET, trial.number)
     
@@ -97,8 +108,12 @@ def objective(trial: Trial):
     
     return trainer.logged_metrics["f1-score"]
 
-study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=100, timeout=1200)
+# Add stream handler of stdout to show the messages
+optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+study_name = "TANet_(3x3)_augmentations" # Unique identifier of the study.
+storage_name = "sqlite:///{}.db".format(study_name)
+study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
+study.optimize(objective, n_trials=100, timeout=600)
 
 print("Number of finished trials: {}".format(len(study.trials)))
 
@@ -110,3 +125,25 @@ print("  Value: {}".format(trial.value))
 print("  Params: ")
 for key, value in trial.params.items():
     print("    {}: {}".format(key, value))
+
+plt.figure()
+plot_contour(study)
+plt.savefig("Contour.png")
+plt.figure()
+plot_edf(study)
+plt.savefig("EDF.png")
+plt.figure()
+plot_intermediate_values(study)
+plt.savefig("Intermediate.png")
+plt.figure()
+plot_optimization_history(study)
+plt.savefig("Optimization_History.png")
+plt.figure()
+plot_parallel_coordinate(study)
+plt.savefig("Parallell_Coordinate.png")
+plt.figure()
+plot_param_importances(study)
+plt.savefig("Param_Importance.png")
+plt.figure()
+plot_slice(study)
+plt.savefig("Slice.png")

@@ -72,7 +72,7 @@ for set_nr in range(0, NUM_SETS):
     else:
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
-        WEIGHT = torch.tensor(2)
+        WEIGHT = torch.tensor(2.52)
 
     EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
     
