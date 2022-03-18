@@ -10,21 +10,27 @@ from util import load_config
 
 
 class DataAugment:
-    def __init__(self, t0_root, t1_root, mask_root, filename, augmentations, shape=(256, 256)):
+    def __init__(self, t0_root, t1_root, mask_root, filename, augmentations, shape=(256, 256), trial=None):
         self.t0_root = t0_root
         self.t1_root = t1_root
         self.mask_root = mask_root
         self.filename = filename
         self.index = None
         self.shape = shape
+
+        random_shadow_p = .5
+        color_jitter_p = .5
+        if trial:
+            random_shadow_p = trial.suggest_uniform("random_shadow_threshold", 0.0, 1.0)
+            color_jitter_p = trial.suggest_uniform("color_jitter_threshold", 0.0, 1.0)
         
         self.transform1 = A.Compose([
-                A.RandomShadow(p=.5),
-                A.ChannelShuffle(p=.5),
+                A.RandomShadow(p=random_shadow_p),
+                A.ColorJitter(p=color_jitter_p)
                 ])
         
         self.transform2 = A.Compose([
-            A.HorizontalFlip(p=1),
+            A.HorizontalFlip(p=1.),
             ])
 
         # Augmentation switches
@@ -39,24 +45,43 @@ class DataAugment:
         random_erase_params = aug_params["RANDOM_ERASE"]
         copy_paste_params = aug_params["COPY_PASTE"]
         albumentation_params = aug_params["ALBUMENTATIONS"]
-
-        # MOSAIC
-        self.mosaic_th = mosaic_params["mosaic_th"]
-        self.translate = mosaic_params["translate"]
-        self.scale = mosaic_params["scale"]
-        self.rotation = mosaic_params["rotation"]
         
-        # Random Erase
-        self.random_erase_th = random_erase_params["random_erase_th"]
+        if trial:
+            # MOSAIC
+            self.mosaic_th = trial.suggest_uniform("mosaic_threshold", 0.0, 1.0)
+            self.translate = trial.suggest_uniform("mosaic_translate", 0.0, 1.0)
+            self.scale = trial.suggest_uniform("mosaic_scale", 0.0, 0.99)
+            self.rotation = trial.suggest_int("mosaic_rotation", 0, 90)
+            
+            # Random Erase
+            self.random_erase_th = trial.suggest_uniform("random_erase_threshold", 0.0, 1.0)
 
-        # Albumentations
-        self.albumentations_th = albumentation_params["albumentations_th"]
+            # Albumentations
+            self.albumentations_th = trial.suggest_uniform("albumentations_threshold", 0.0, 1.0)
 
-        # Copy Paste
-        copy_paste_scale = copy_paste_params["copy_paste_scale"]
-        copy_paste_rotation = copy_paste_params["copy_paste_rotation"]
-        self.copy_paste_th = copy_paste_params["copy_paste_th"]
-        self.copy_paste = CopyPaste(t0_root, t1_root, mask_root, filename, scale=[copy_paste_scale[0],copy_paste_scale[1]], rotation=copy_paste_rotation)
+            # Copy Paste
+            copy_paste_scale = trial.suggest_uniform("copy_paste_scale", 0.0, 0.99)
+            copy_paste_rotation = trial.suggest_int("copy_paste_rotation", 0, 180)
+            self.copy_paste_th = trial.suggest_uniform("copy_paste_threshold", 0.0, 1.0)
+        else:
+            # MOSAIC
+            self.mosaic_th = mosaic_params["mosaic_th"]
+            self.translate = mosaic_params["translate"]
+            self.scale = mosaic_params["scale"]
+            self.rotation = mosaic_params["rotation"]
+            
+            # Random Erase
+            self.random_erase_th = random_erase_params["random_erase_th"]
+
+            # Albumentations
+            self.albumentations_th = albumentation_params["albumentations_th"]
+
+            # Copy Paste
+            copy_paste_scale = copy_paste_params["copy_paste_scale"]
+            copy_paste_rotation = copy_paste_params["copy_paste_rotation"]
+            self.copy_paste_th = copy_paste_params["copy_paste_th"]
+        
+        self.copy_paste = CopyPaste(t0_root, t1_root, mask_root, filename, scale=copy_paste_scale, rotation=copy_paste_rotation)
 
     def __call__(self, index):
         """
@@ -129,7 +154,7 @@ class DataAugment:
             img_mask = self.img_mask_list[i]
 
             # scale each image seperately
-            resize_factor = uniform(self.scale[0], self.scale[1])
+            resize_factor = uniform(1.0 - self.scale, 1.0 + self.scale)
             h_orig, w_orig, _ = img_t0.shape
             img_t0 =   cv2.resize(img_t0,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
             img_t1 =   cv2.resize(img_t1,   (int(resize_factor*w_orig), int(resize_factor*h_orig)))
@@ -209,11 +234,9 @@ class DataAugment:
         self.img_mask_list.append(img_mask)
 
 
-    def random_perspective(self, im_t0, im_t1, im_mask, degrees=0, translate=.2, scale=0, shear=0, perspective=0.0,
+    def random_perspective(self, im_t0, im_t1, im_mask, degrees=0, translate=.2, shear=0, perspective=0.0,
                         border=(0, 0)):
         
-
-
         height = im_t0.shape[0] + border[0] * 2  # shape(h,w,c)
         width = im_t0.shape[1] + border[1] * 2
     
@@ -230,9 +253,9 @@ class DataAugment:
         # Rotation and Scale
         R = np.eye(3)
         a = uniform(-degrees, degrees)
-        if not degrees == 0 and random() >= .5:
+        if (not degrees == 0) and (random() >= .5):
             a += 180
-        s = uniform(1 - scale, 1)
+        s = 1.0
         R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
 
         # Shear
@@ -312,12 +335,12 @@ class CopyPaste():
     '''
 
 
-    def __init__(self, t0_root, t1_root, mask_root, filename, scale=[0.3,0.8], rotation=180):
+    def __init__(self, t0_root, t1_root, mask_root, filename, scale, rotation=180):
         """
         params: 
             t0_root: root directory to t0 images
             t1_root: root directory to t1 images
-            mask_root: root directory to mask with .bmp files
+            mask_root: root directory to mask with .png files
             filename: a list of filenames in mask directory
             scale: scaling of the pasted image randomly between scale[0] and scale[1]
             rotation: rotation of the pasted image randomly between -rotation and rotation in degrees
@@ -335,7 +358,8 @@ class CopyPaste():
         h, w, _ = img_t0.shape
 
         #copy_t0 = transforms.Resize(size=(H, W))(self.instance)
-        resize_factor = uniform(self.scale[0], self.scale[1])
+        resize_factor = uniform(1.0 - self.scale, 1.0)
+        resize_factor = max(0.01, resize_factor)
         copy_t0 =   cv2.resize(copy_t0,   (int(resize_factor*w), int(resize_factor*h)))
         copy_t1 =   cv2.resize(copy_t1,   (int(resize_factor*w), int(resize_factor*h)))
         copy_mask = cv2.resize(copy_mask, (int(resize_factor*w), int(resize_factor*h)))
@@ -412,7 +436,7 @@ if __name__ == '__main__':
     root = '/home/samnehme/Dev/SCD_project/TSUNAMI/set0/train'
     img_t0_root = pjoin(root,'t0')
     img_t1_root = pjoin(root,'t1')
-    img_mask_root = pjoin(root,'mask/bmp')
+    img_mask_root = pjoin(root,'mask')
     filename = list(spt(f)[0] for f in os.listdir(img_mask_root))
     data_augmenter = DataAugment(img_t0_root, img_t1_root, img_mask_root, filename)
 

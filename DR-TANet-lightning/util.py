@@ -44,10 +44,10 @@ def cal_metrics(pred,target):
     
     TN, FP, FN, TP = confusion_matrix(np.matrix.flatten(pred), np.matrix.flatten(target)).ravel()
 
-    precision = TP / (TP + FP) if (TP + FP) != 0 else 0.0
-    recall = TP / (TP + FN) if (TP + FN) != 0 else 0.0
-    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0 else 0.0
-    f1_score = 2.0 * recall * precision / (precision + recall) if (precision + recall) != 0 else 0.0
+    precision = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+    f1_score = 2.0 * recall * precision / (precision + recall) if (precision + recall) != 0.0 else 0.0
 
     return precision, recall, accuracy, f1_score
     

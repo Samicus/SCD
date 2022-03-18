@@ -28,7 +28,8 @@ class TANet(LightningModule):
         self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False
-
+        
+        # Network Layers
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
         self.encoder2, _ = get_encoder(encoder_arch,pretrained=True)
         self.attention_module = get_attentionmodule(local_kernel_size, stride, padding, groups, drtam, refinement, channels)
@@ -147,7 +148,7 @@ class TANet(LightningModule):
                 mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
                 img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
                 
-                if LOG_IMG and not "VL_CMU_CD" in self.EXPERIMENT_NAME:
+                if LOG_IMG and not ("trial" in self.EXPERIMENT_NAME):
                     self.logger.experiment.track(
                         Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
                         name="val_batch_{}".format(batch_idx),  # The name of image set

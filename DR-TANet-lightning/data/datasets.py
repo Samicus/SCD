@@ -48,7 +48,7 @@ class PCD(Dataset):
             img_t0 = cv2.imread(fn_t0, 1)
             img_t1 = cv2.imread(fn_t1, 1)
             mask = cv2.imread(fn_mask, 0)
-
+            
         # Invert BMP mask
         mask = 255 - mask
         
@@ -97,7 +97,7 @@ class PCD(Dataset):
 
 class VL_CMU_CD(Dataset):
 
-    def __init__(self, root, augmentations, AUGMENT_ON):
+    def __init__(self, root, augmentations, AUGMENT_ON, trial=None):
         super(VL_CMU_CD, self).__init__()
         self.img_t0_root = pjoin(root, 't0')
         self.img_t1_root = pjoin(root, 't1')
@@ -106,7 +106,7 @@ class VL_CMU_CD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(512, 512))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(512, 512), trial=trial)
 
     def __getitem__(self, index):
 
@@ -125,18 +125,23 @@ class VL_CMU_CD(Dataset):
             print('Error: File Not Found: ' + fn_mask)
             exit(-1)
 
-        img_t0 = cv2.imread(fn_t0, 1)
-        img_t1 = cv2.imread(fn_t1, 1)
+        # Augmentations
+        if self.AUGMENT_ON:
+            img_t0, img_t1, mask = self.data_augment(index)
+        else:
+            img_t0 = cv2.imread(fn_t0, 1)
+            img_t1 = cv2.imread(fn_t1, 1)
+            mask = cv2.imread(fn_mask, 0)
+        
         mask = 255 - cv2.imread(fn_mask, 0)
 
-        mask_r = mask[:, :, np.newaxis]
-
-        img_t0_r = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0
-        img_t1_r = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0
-        mask_r_ = np.asarray(mask_r > 128).astype('f').transpose(2, 1, 0)
+        # Normalization
+        img_t0_r = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
+        img_t1_r = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
+        mask_r = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 1, 0)     # -- > (RGB, height, width)
         
         input_ = np.concatenate((img_t0_r, img_t1_r))
-        mask_ = mask_r_
+        mask_ = mask_r
         
         return input_, mask_
 
