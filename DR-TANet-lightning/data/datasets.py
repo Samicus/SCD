@@ -21,7 +21,7 @@ class PCD(Dataset):
         self.filename.sort()
         
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024))
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(256, 256))
         self.PCD_CONFIG = PCD_CONFIG
         
     def __getitem__(self, index):
@@ -48,7 +48,7 @@ class PCD(Dataset):
             img_t0 = cv2.imread(fn_t0, 1)
             img_t1 = cv2.imread(fn_t1, 1)
             mask = cv2.imread(fn_mask, 0)
-
+            
         # Invert BMP mask
         mask = 255 - mask
         

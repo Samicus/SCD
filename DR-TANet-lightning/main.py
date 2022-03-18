@@ -72,7 +72,7 @@ for set_nr in range(0, NUM_SETS):
     else:
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
-        WEIGHT = torch.tensor(1)
+        WEIGHT = torch.tensor(2)
 
     EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
     
@@ -95,7 +95,7 @@ for set_nr in range(0, NUM_SETS):
     )
     trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
                       logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
-                      check_val_every_n_epoch=1
+                      check_val_every_n_epoch=10
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)

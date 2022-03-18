@@ -201,9 +201,9 @@ class DataAugment:
             for idx in indices:
                 fn = self.filename[idx]
 
-                fn_t0 =   pjoin(self.t0_root,fn+'.png')
-                fn_t1 =   pjoin(self.t1_root,fn+'.png')
-                fn_mask = pjoin(self.mask_root,fn+'.png')
+                fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
+                fn_t1 =   pjoin(self.t1_root,fn+'.jpg')
+                fn_mask = pjoin(self.mask_root,fn+'.bmp')
 
                 img_t0 =   cv2.imread(fn_t0, 1)
                 img_t1 =   cv2.imread(fn_t1, 1)
@@ -220,9 +220,9 @@ class DataAugment:
         """
         fn = self.filename[self.index]
 
-        fn_t0 =   pjoin(self.t0_root,fn+'.png')
-        fn_t1 =   pjoin(self.t1_root,fn+'.png')
-        fn_mask = pjoin(self.mask_root,fn+'.png')
+        fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
+        fn_t1 =   pjoin(self.t1_root,fn+'.jpg')
+        fn_mask = pjoin(self.mask_root,fn+'.bmp')
 
         img_t0 =   cv2.imread(fn_t0, 1)
         img_t1 =   cv2.imread(fn_t1, 1)
@@ -417,9 +417,9 @@ class CopyPaste():
         index = np.random.randint(0, nr_images) 
         fn = self.filename[index]
 
-        fn_t0 =   pjoin(self.t0_root,fn+'.png')
-        fn_t1 =   pjoin(self.t1_root,fn+'.png')
-        fn_mask = pjoin(self.mask_root,fn+'.png')
+        fn_t0 =   pjoin(self.t0_root,fn+'.jpg')
+        fn_t1 =   pjoin(self.t1_root,fn+'.jpg')
+        fn_mask = pjoin(self.mask_root,fn+'.bmp')
 
         img_t0 =   cv2.imread(fn_t0, 1)
         img_t1 =   cv2.imread(fn_t1, 1)
