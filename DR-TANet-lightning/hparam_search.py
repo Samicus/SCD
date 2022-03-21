@@ -22,6 +22,7 @@ from optuna.visualization.matplotlib import plot_slice
 from matplotlib import pyplot as plt
 import logging
 import sys
+import gc
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
@@ -97,7 +98,7 @@ def objective(trial: Trial):
         #fast_dev_run=True   # DEBUG
     )
     
-    data_module = PCDdataModule(4, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial)
+    data_module = PCDdataModule(0, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial)
     DATASET = "PCD"
     WEIGHT = torch.tensor(2.52)
     
@@ -113,7 +114,7 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 study_name = "TANet_(3x3)_augmentations" # Unique identifier of the study.
 storage_name = "sqlite:///{}.db".format(study_name)
 study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
-study.optimize(objective, n_trials=100, timeout=600)
+study.optimize(objective, n_trials=100, gc_after_trial=True)
 
 print("Number of finished trials: {}".format(len(study.trials)))
 
