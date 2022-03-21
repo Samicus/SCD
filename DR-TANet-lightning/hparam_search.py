@@ -24,6 +24,9 @@ import logging
 import sys
 import gc
 
+manager = plt.get_current_fig_manager()
+manager.full_screen_toggle()
+
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
 ROT_PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "rotated_PCD")
@@ -94,7 +97,8 @@ def objective(trial: Trial):
         max_epochs=MAX_EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
-        log_every_n_steps=5
+        log_every_n_steps=5,
+        min_epochs=12
         #fast_dev_run=True   # DEBUG
     )
     
@@ -114,7 +118,7 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 study_name = "TANet_(3x3)_augmentations" # Unique identifier of the study.
 storage_name = "sqlite:///{}.db".format(study_name)
 study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
-study.optimize(objective, n_trials=100, gc_after_trial=True)
+study.optimize(objective, n_trials=10, gc_after_trial=True)
 
 print("Number of finished trials: {}".format(len(study.trials)))
 
