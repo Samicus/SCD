@@ -98,7 +98,7 @@ def objective(trial: Trial):
         gpus=1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
         log_every_n_steps=5,
-        min_epochs=12
+        min_epochs=10
         #fast_dev_run=True   # DEBUG
     )
     

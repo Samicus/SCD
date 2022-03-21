@@ -18,12 +18,14 @@ class DataAugment:
         self.index = None
         self.shape = shape
 
-        random_shadow_p = .5
-        color_jitter_p = .5
+        
         if trial:
             random_shadow_p = trial.suggest_uniform("random_shadow_threshold", 0.0, 1.0)
             color_jitter_p = trial.suggest_uniform("color_jitter_threshold", 0.0, 1.0)
-        
+        else:
+            random_shadow_p = .5
+            color_jitter_p = .5
+            
         self.transform1 = A.Compose([
                 A.RandomShadow(p=random_shadow_p),
                 A.ColorJitter(p=color_jitter_p)
@@ -56,9 +58,6 @@ class DataAugment:
             # Random Erase
             self.random_erase_th = trial.suggest_uniform("random_erase_threshold", 0.0, 1.0)
 
-            # Albumentations
-            self.albumentations_th = trial.suggest_uniform("albumentations_threshold", 0.0, 1.0)
-
             # Copy Paste
             copy_paste_scale = trial.suggest_uniform("copy_paste_scale", 0.0, 0.99)
             copy_paste_rotation = trial.suggest_int("copy_paste_rotation", 0, 180)
@@ -72,9 +71,6 @@ class DataAugment:
             
             # Random Erase
             self.random_erase_th = random_erase_params["random_erase_th"]
-
-            # Albumentations
-            self.albumentations_th = albumentation_params["albumentations_th"]
 
             # Copy Paste
             copy_paste_scale = copy_paste_params["copy_paste_scale"]
@@ -103,7 +99,7 @@ class DataAugment:
         if self.copy_paste_on and random() < self.copy_paste_th:
             self.apply_copy_paste()
 
-        if self.albumentations_on and random() < self.albumentations_th:
+        if self.albumentations_on:
             # Augments data with albumentations, Which augments to be applied is chosen in params.py by albumentations_config
             self.albumentation_augment()
 
