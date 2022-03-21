@@ -66,11 +66,11 @@ refinement = hparams["refinement"]
 for set_nr in range(0, NUM_SETS):
     
     if parsed_args.VL_CMU_CD:
-        data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
+        data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial=None)
         DATASET = "VL_CMU_CD"
         WEIGHT = torch.tensor(4)
     else:
-        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
+        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial=None)
         DATASET = "PCD"
         WEIGHT = torch.tensor(2.52)
 
