@@ -113,11 +113,12 @@ def objective(trial: Trial):
     
     return trainer.logged_metrics["f1-score"]
 
+pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=100)
 # Add stream handler of stdout to show the messages
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study_name = "TANet_(3x3)_augmentations" # Unique identifier of the study.
 storage_name = "sqlite:///{}.db".format(study_name)
-study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize")
+study = optuna.create_study(study_name=study_name, storage=storage_name, direction="maximize",pruner=pruner)
 study.optimize(objective, n_trials=10, gc_after_trial=True)
 
 print("Number of finished trials: {}".format(len(study.trials)))
