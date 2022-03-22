@@ -7,7 +7,7 @@ from torchmetrics.functional import precision, recall, f1_score, accuracy
 import torch.nn as nn
 import torch
 from torch.optim import Adam
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, LinearLR
 from aim import Image
 from os.path import join as pjoin
 from torchvision.utils import save_image
@@ -95,11 +95,11 @@ class TANet(LightningModule):
         
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
-        scheduler = ReduceLROnPlateau(optimizer, "min")
+        scheduler = ReduceLROnPlateau(optimizer, "max")
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
-            'monitor': 'val_loss'
+            'monitor': 'f1-score'
             }
         
     def evaluation(self, batch, batch_idx, LOG_IMG=False):
@@ -185,15 +185,14 @@ class TANet(LightningModule):
         
         inputs_test, mask_test = batch
         preds = self(inputs_test)
-        mask_test = mask_test.int()
-        
         val_loss = F.binary_cross_entropy_with_logits(preds, mask_test.float(), self.WEIGHT)
 
         # Activation
         preds = torch.sigmoid(preds)
         preds[preds > 0.5] = 1
         preds[preds <= 0.5] = 0
-
+        
+        mask_test = mask_test.int()
         precision_batch = precision(preds, mask_test)
         recall_batch = recall(preds, mask_test)
         accuracy_batch = accuracy(preds, mask_test)
