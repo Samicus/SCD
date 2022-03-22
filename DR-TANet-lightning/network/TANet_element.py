@@ -266,7 +266,7 @@ def resnet50(pretrained=True, **kwargs):
     channels = [256, 512, 1024, 2048]
     return model,channels
 
-def get_encoder(arch,pretrained=True):
+def get_encoder(arch, pretrained=True):
     if arch == 'resnet18':
         return resnet18(pretrained)
     elif arch == 'resnet34':

@@ -52,10 +52,17 @@ class PCD(Dataset):
         # Invert BMP mask
         mask = 255 - mask
         
+        h, w = mask.shape
+        
+        if h < 256 and w < 256:
+            img_t0 = cv2.resize(img_t0, (256, 256))
+            img_t1 = cv2.resize(img_t1, (256, 256))
+            mask = cv2.resize(mask, (256, 256))
+        
         # Normalization
         img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
         img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
-        mask_r_ = np.asarray(mask[:, :, np.newaxis]>0).astype('f').transpose(2, 1, 0)       # -- > (RGB, height, width)
+        mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 1, 0)       # -- > (RGB, height, width)
         
         # Cropped or full images
         if self.PCD_CONFIG == "crop":

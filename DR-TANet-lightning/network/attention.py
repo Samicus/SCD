@@ -98,10 +98,3 @@ class Temporal_Attention(nn.Module):
             out += torch.einsum('bnhwk,bnchwk -> bnchw', out_col, v_out_col).contiguous().view(batch, -1, h, w)
 
         return out
-
-
-
-
-
-
-

@@ -3,6 +3,7 @@ from util import upsample
 from network.TANet_element import *
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
+from torchmetrics.functional import precision, recall, f1_score, accuracy
 import torch.nn as nn
 import torch
 from torch.optim import Adam
@@ -21,10 +22,13 @@ NUM_OUT_CHANNELS = 1
 
 class TANet(LightningModule):
 
-    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=False):
+    def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=False):
         super(TANet, self).__init__()
         self.EXPERIMENT_NAME = EXPERIMENT_NAME
-        self.WEIGHT = WEIGHT
+        if 'VL_CMU_CD' in EXPERIMENT_NAME:
+            self.WEIGHT = torch.tensor(4)
+        else:
+            self.WEIGHT = torch.tensor(2)
         self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False
@@ -81,20 +85,21 @@ class TANet(LightningModule):
         return metrics
     
     def validation_step(self, batch, batch_idx):
-        log_img = False
-        if self.logger:
-            log_img = True
-        metrics = self.evaluation(batch, batch_idx, LOG_IMG=log_img)
+        #if self.logger:
+        #    metrics = self.evaluation(batch, batch_idx, LOG_IMG=True)
+        #else:
+        #    metrics = self.evaluate_batch(batch, batch_idx)
+        metrics = self.evaluate_batch(batch, batch_idx)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
         return metrics
         
     def configure_optimizers(self):
         optimizer = Adam(self.parameters(), lr=0.001, betas=(0.9, 0.999))
-        scheduler = ReduceLROnPlateau(optimizer, "max")
+        scheduler = ReduceLROnPlateau(optimizer, "min")
         return {
             'optimizer': optimizer,
             'lr_scheduler': scheduler,
-            'monitor': 'f1-score'
+            'monitor': 'val_loss'
             }
         
     def evaluation(self, batch, batch_idx, LOG_IMG=False):
@@ -107,6 +112,7 @@ class TANet(LightningModule):
         recall_tot = 0
         accuracy_tot = 0
         f1_score_tot = 0
+        val_loss_tot = 0
             
         for idx, (inputs, target) in enumerate(zip(inputs_test, mask_test)):
             
@@ -115,17 +121,19 @@ class TANet(LightningModule):
             pred = self(inputs_forward)
             pred = torch.squeeze(pred, dim=0)
             
+            val_loss_tot += F.binary_cross_entropy_with_logits(pred, target.float(), self.WEIGHT)
+            
             # Activation
             pred = torch.sigmoid(pred)
             pred[pred <= 0.5] = 0
             pred[pred > 0.5] = 1
             
             # Calculate metrics
-            precision, recall, accuracy, f1_score = cal_metrics(pred.cpu().numpy(), target.cpu().numpy())
-            precision_tot += precision
-            recall_tot += recall
-            accuracy_tot += accuracy
-            f1_score_tot += f1_score
+            precision_img, recall_img, accuracy_img, f1_score_img = cal_metrics(pred.cpu().numpy(), target.cpu().numpy())
+            precision_tot += precision_img
+            recall_tot += recall_img
+            accuracy_tot += accuracy_img
+            f1_score_tot += f1_score_img
             
             if LOG_IMG == True or LOG_IMG == None:
                 
@@ -167,7 +175,36 @@ class TANet(LightningModule):
             'precision': precision_tot / current_batch_size,
             'recall': recall_tot / current_batch_size,
             "accuracy": accuracy_tot / current_batch_size,
-            'f1-score': f1_score_tot / current_batch_size
+            'f1-score': f1_score_tot / current_batch_size,
+            "val_loss": val_loss_tot / current_batch_size
+            }
+        
+        return metrics
+    
+    def evaluate_batch(self, batch, batch_idx):
+        
+        inputs_test, mask_test = batch
+        preds = self(inputs_test)
+        mask_test = mask_test.int()
+        
+        val_loss = F.binary_cross_entropy_with_logits(preds, mask_test.float(), self.WEIGHT)
+
+        # Activation
+        preds = torch.sigmoid(preds)
+        preds[preds > 0.5] = 1
+        preds[preds <= 0.5] = 0
+
+        precision_batch = precision(preds, mask_test)
+        recall_batch = recall(preds, mask_test)
+        accuracy_batch = accuracy(preds, mask_test)
+        f1_score_batch = f1_score(preds, mask_test)
+
+        metrics = {
+            'precision': precision_batch,
+            'recall': recall_batch,
+            "accuracy": accuracy_batch,
+            'f1-score': f1_score_batch,
+            "val_loss": val_loss
             }
         
         return metrics

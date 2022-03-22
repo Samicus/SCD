@@ -10,10 +10,6 @@ import os
 from util import load_config
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-dirname = os.path.dirname
-PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
-ROT_PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "rotated_PCD")
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", required=True,
 	help="path to YAML")
@@ -63,16 +59,18 @@ groups = hparams["groups"]
 drtam = hparams["drtam"]
 refinement = hparams["refinement"]
 
+VALIDATION_STEP = 1
+#if parsed_args.aim:
+#    VALIDATION_STEP = 10
+
 for set_nr in range(0, NUM_SETS):
     
     if parsed_args.VL_CMU_CD:
         data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
         DATASET = "VL_CMU_CD"
-        WEIGHT = torch.tensor(4)
     else:
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
-        WEIGHT = torch.tensor(2)
 
     EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
     
@@ -88,15 +86,18 @@ for set_nr in range(0, NUM_SETS):
         aim_logger = None
 
     checkpoint_callback = ModelCheckpoint(
-        monitor="f1-score",
+        monitor="val_loss",
         save_top_k=1,
         save_last=True,
-        mode="max",
+        mode="min",
     )
-    trainer = Trainer(gpus=NUM_GPU, log_every_n_steps=5, max_epochs=MAX_EPOCHS, 
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
-                      check_val_every_n_epoch=10
+    early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=20)
+    trainer = Trainer(gpus=NUM_GPU, max_epochs=MAX_EPOCHS,
+                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback, early_stopping],
+                      check_val_every_n_epoch=VALIDATION_STEP,
+                      default_root_dir="checkpoints/set{}".format(set_nr),
+                      log_every_n_steps=5
                       )
     
-    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)
+    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)
