@@ -1,5 +1,5 @@
 from doctest import SKIP
-from util import upsample
+from util import cal_metrics_sklearn, upsample
 from network.TANet_element import *
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
@@ -80,7 +80,7 @@ class TANet(LightningModule):
         return train_loss
     
     def test_step(self, batch, batch_idx):
-        metrics = self.evaluation(batch, batch_idx, LOG_IMG=None)
+        metrics = self.evaluate_batch(batch, batch_idx, LOG_IMG=None)
         self.log_dict(metrics)
         return metrics
     
@@ -129,11 +129,18 @@ class TANet(LightningModule):
             pred[pred > 0.5] = 1
             
             # Calculate metrics
-            precision_img, recall_img, accuracy_img, f1_score_img = cal_metrics(pred.cpu().numpy(), target.cpu().numpy())
-            precision_tot += precision_img
-            recall_tot += recall_img
-            accuracy_tot += accuracy_img
-            f1_score_tot += f1_score_img
+            #precision_img, recall_img, accuracy_img, f1_score_img = cal_metrics_sklearn(pred.cpu().numpy(), target.cpu().numpy())
+            #precision_tot += precision_img
+            #recall_tot += recall_img
+            #accuracy_tot += accuracy_img
+            #f1_score_tot += f1_score_img
+            
+            # Torchmetrics
+            precision_tot += precision(pred, target)
+            recall_tot += recall(pred, target)
+            accuracy_tot += accuracy(pred, target)
+            f1_score_tot += f1_score(pred, target)
+            print(f1_score_tot)
             
             if LOG_IMG == True or LOG_IMG == None:
                 
@@ -181,7 +188,7 @@ class TANet(LightningModule):
         
         return metrics
     
-    def evaluate_batch(self, batch, batch_idx):
+    def evaluate_batch(self, batch, batch_idx, LOG_IMG=False):
         
         inputs_test, mask_test = batch
         preds = self(inputs_test)
@@ -197,6 +204,10 @@ class TANet(LightningModule):
         recall_batch = recall(preds, mask_test)
         accuracy_batch = accuracy(preds, mask_test)
         f1_score_batch = f1_score(preds, mask_test)
+        
+        if LOG_IMG == True or LOG_IMG == None:
+            
+            self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
 
         metrics = {
             'precision': precision_batch,
@@ -207,3 +218,40 @@ class TANet(LightningModule):
             }
         
         return metrics
+    
+    def gen_img(self, inputs_test, preds, mask_test, batch_idx, LOG_IMG):
+        for idx, (inputs, pred, target) in enumerate(zip(inputs_test, preds, mask_test)):
+            
+            # Convert input to image
+            t0 = (inputs[0:3] * 255.0).type(torch.uint8).transpose(2, 1)  # (RGB, height, width)
+            t1 = (inputs[3:6] * 255.0).type(torch.uint8).transpose(2, 1)  # (RGB, height, width)
+
+            # Convert prediction to image
+            pred_img = pred.type(torch.uint8).transpose(2, 1)
+            pred_img = torch.cat((pred_img, pred_img, pred_img), 0) # Grayscale --> RGB
+            pred_img *= 255 # 1 --> 255
+
+            # Convert target to image
+            target_img = target.type(torch.uint8).transpose(2, 1)
+            target_img = torch.cat((target_img, target_img, target_img), 0) # Grayscale --> RGB
+            target_img *= 255 # 1 --> 255
+
+            # Stitch together inputs, prediction and target in a final image.
+            input_images = torch.cat((t0, t1), 2)                   # Horizontal stack of inputs t0 and t1.
+            mask_images = torch.cat((target_img, pred_img), 2)      # Horizontal stack of prediction and target.
+            img_save = torch.cat((input_images, mask_images), 1)    # Vertical stack of inputs, prediction and target.
+            
+            if LOG_IMG and not ("trial" in self.EXPERIMENT_NAME):
+                self.logger.experiment.track(
+                    Image(img_save, "pred_{}".format(idx)), # Pass image data and/or caption
+                    name="val_batch_{}".format(batch_idx),  # The name of image set
+                    step=idx,   # Step index (optional)
+                    #epoch=0,   # Epoch (optional)
+                    context={   # Context (optional)
+                        'subset': 'validation',
+                    }
+                )
+            else:
+                save_to = pjoin(dir_img, self.EXPERIMENT_NAME)
+                os.makedirs(save_to, exist_ok=True)
+                save_image(mask_images.type(torch.float), pjoin(save_to, "pred_{}_batch_{}.png".format(idx, batch_idx)))
