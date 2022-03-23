@@ -4,7 +4,8 @@ import numpy as np
 from torch.utils.data import Dataset
 from os.path import join as pjoin, splitext as spt
 from data.augmentations import DataAugment
-
+import albumentations as A
+from PIL import Image
 
 def check_validness(f):
     return any([i in spt(f)[1] for i in ['jpg', 'bmp', 'png']])
@@ -24,6 +25,9 @@ class PCD(Dataset):
         self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024))    # (height, width)
         self.PCD_CONFIG = PCD_CONFIG
         
+        self.transform = A.Compose([
+                A.Sharpen (alpha=(1, 1), lightness=(0,0), p=1)
+                ])
     def __getitem__(self, index):
         
         fn = self.filename[index]
@@ -41,13 +45,24 @@ class PCD(Dataset):
             print('Error: File Not Found: ' + fn_mask)
             exit(-1)
         
-        # Augmentations
-        if self.AUGMENT_ON:
-            img_t0, img_t1, mask = self.data_augment(index)
+        if self.sharpen:
+            pillow_t0 = Image.open(fn_t0)
+            img_t0 = np.array(pillow_t0)
+            img_t0 = self.transform(image=img_t0)["image"]
+            pillow_t1 = Image.open(fn_t1)
+            img_t1 = np.array(pillow_t1)
+            img_t1 = self.transform(image=img_t1)["image"]
+            pillow_mask = Image.open(fn_mask)
+            mask = np.array(pillow_mask)
+            mask = self.transform(image=mask)["image"]
         else:
-            img_t0 = cv2.imread(fn_t0, 1)
-            img_t1 = cv2.imread(fn_t1, 1)
-            mask = cv2.imread(fn_mask, 0)
+            # Augmentations
+            if self.AUGMENT_ON:
+                img_t0, img_t1, mask = self.data_augment(index)
+            else:
+                img_t0 = cv2.imread(fn_t0, 1)
+                img_t1 = cv2.imread(fn_t1, 1)
+                mask = cv2.imread(fn_mask, 0)
             
         # Invert BMP mask
         mask = 255 - mask
