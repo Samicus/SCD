@@ -1,9 +1,9 @@
 MISC:
-  PRE_PROCESS: "default"  # "default" or "paper"
+  PRE_PROCESS: "paper"  # "default" or "paper"
   PCD_CONFIG : "full" # "crop" or "full"
-  MAX_EPOCHS : 100
+  MAX_EPOCHS : 1000
   NUM_WORKERS : 8
-  BATCH_SIZE : 5
+  BATCH_SIZE : 16
   NUM_SETS : 5
 
 HPARAMS:
