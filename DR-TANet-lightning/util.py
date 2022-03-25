@@ -40,7 +40,7 @@ class Upsample(nn.Module):
         x = self.blend_conv.forward(x)
         return x
 
-def cal_metrics(pred,target):
+def cal_metrics_sklearn(pred,target):
     
     TN, FP, FN, TP = confusion_matrix(np.matrix.flatten(pred), np.matrix.flatten(target)).ravel()
 
@@ -50,6 +50,27 @@ def cal_metrics(pred,target):
     f1_score = 2.0 * recall * precision / (precision + recall) if (precision + recall) != 0.0 else 0.0
 
     return precision, recall, accuracy, f1_score
+
+def cal_metrics(pred,target):
+
+    temp = np.dstack((pred == 1, target == 1))
+    TP = sum(sum(np.all(temp,axis=2)))
+
+    temp = np.dstack((pred == 1, target == 0))
+    FP = sum(sum(np.all(temp,axis=2)))
+
+    temp = np.dstack((pred == 0, target == 1))
+    FN = sum(sum(np.all(temp, axis=2)))
+
+    temp = np.dstack((pred == 0, target == 0))
+    TN = sum(sum(np.all(temp, axis=2)))
+
+    precision = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+    accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+    f1_score = 2 * recall * precision / (precision + recall) if (precision + recall) != 0.0 else 0.0
+
+    return (precision, recall, accuracy, f1_score)
     
 def load_config(hparams_path):
     with open(hparams_path) as f:

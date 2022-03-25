@@ -44,7 +44,6 @@ class DataAugment:
         mosaic_params = aug_params["MOSAIC"]
         random_erase_params = aug_params["RANDOM_ERASE"]
         copy_paste_params = aug_params["COPY_PASTE"]
-        albumentation_params = aug_params["ALBUMENTATIONS"]
         
         if trial:
             # MOSAIC
@@ -55,9 +54,6 @@ class DataAugment:
             
             # Random Erase
             self.random_erase_th = trial.suggest_uniform("random_erase_threshold", 0.0, 1.0)
-
-            # Albumentations
-            self.albumentations_th = trial.suggest_uniform("albumentations_threshold", 0.0, 1.0)
 
             # Copy Paste
             copy_paste_scale = trial.suggest_uniform("copy_paste_scale", 0.0, 0.99)
@@ -72,9 +68,6 @@ class DataAugment:
             
             # Random Erase
             self.random_erase_th = random_erase_params["random_erase_th"]
-
-            # Albumentations
-            self.albumentations_th = albumentation_params["albumentations_th"]
 
             # Copy Paste
             copy_paste_scale = copy_paste_params["copy_paste_scale"]
@@ -103,7 +96,7 @@ class DataAugment:
         if self.copy_paste_on and random() < self.copy_paste_th:
             self.apply_copy_paste()
 
-        if self.albumentations_on and random() < self.albumentations_th:
+        if self.albumentations_on and random():
             # Augments data with albumentations, Which augments to be applied is chosen in params.py by albumentations_config
             self.albumentation_augment()
 

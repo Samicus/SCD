@@ -81,19 +81,21 @@ def rotate_dir(path, extension):
 
 for set_nr in range(SET_NR):
     
-    data_path = pjoin(PCD_PATH, "set{}".format(set_nr), "train")
+    for split_type in ["train", "test"]:
+    
+        data_path = pjoin(PCD_PATH, "set{}".format(set_nr), split_type)
 
-    mask_path = pjoin(data_path, "mask")
-    t0_path = pjoin(data_path, "t0")
-    t1_path = pjoin(data_path, "t1")
+        mask_path = pjoin(data_path, "mask")
+        t0_path = pjoin(data_path, "t0")
+        t1_path = pjoin(data_path, "t1")
 
-    operations = [
-        (mask_path,   "*.bmp",    args["mask"]),
-        (t0_path,     "*.jpg",    args["t0"]),
-        (t1_path,     "*.jpg",    args["t1"])
-        ]
+        operations = [
+            (mask_path,   "*.bmp",    args["mask"]),
+            (t0_path,     "*.jpg",    args["t0"]),
+            (t1_path,     "*.jpg",    args["t1"])
+            ]
 
-    for (path, extension, arg) in operations:
-        if arg:
-            print("Performing rotation augmentation in path: {}".format(path))
-            rotate_dir(path, extension)
+        for (path, extension, arg) in operations:
+            if arg:
+                print("Performing rotation augmentation in path: {}".format(path))
+                rotate_dir(path, extension)
