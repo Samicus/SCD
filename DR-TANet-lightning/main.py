@@ -95,7 +95,8 @@ for set_nr in range(0, NUM_SETS):
                       logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
                       check_val_every_n_epoch=VALIDATION_STEP,
                       default_root_dir="checkpoints/set{}".format(set_nr),
-                      log_every_n_steps=5, min_epochs=MAX_EPOCHS/2
+                      log_every_n_steps=5, min_epochs=MAX_EPOCHS/2,
+                      #resume_from_checkpoint = ".aim/vanilla_PCD_set0/6da3f0e1524440ad8b590429/checkpoints/last.ckpt"
                       )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
