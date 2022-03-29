@@ -1,7 +1,7 @@
 from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader, ConcatDataset
-from data.datasets import VL_CMU_CD, PCD, PCD_debug
+from data.datasets import VL_CMU_CD, PCD
 import os
 
 dirname = os.path.dirname
@@ -16,7 +16,7 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL="PCD"):
+    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial, EVAL="PCD"):
         self.set_nr = set_nr
         self.augmentations = augmentations
         self.NUM_WORKERS = NUM_WORKERS
@@ -27,8 +27,8 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD_debug(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
-        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
+        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, trial=trial)
+        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, trial=trial)
         self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
         TSUNAMI_test = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")

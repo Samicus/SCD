@@ -86,18 +86,18 @@ def objective(trial: Trial):
         #fast_dev_run=True   # DEBUG
     )
     
-    data_module = PCDdataModule(4, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE, trial)
+    data_module = PCDdataModule(0, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial)
     DATASET = "PCD"
-    WEIGHT = torch.tensor(2)
     
     EXPERIMENT_NAME = '{}_{}_trial_{}'.format(LOG_NAME, DATASET, trial.number)
     
-    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, WEIGHT, DETERMINISTIC=DETERMINISTIC)
+    model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)
     
     return trainer.logged_metrics["f1-score"]
 
-study = optuna.create_study(direction="maximize")
+study_name = 'params'  # Unique identifier of the study.
+study = optuna.create_study(study_name=study_name, storage='sqlite:///params.db', direction="maximize")
 study.optimize(objective, n_trials=100, timeout=1200)
 
 print("Number of finished trials: {}".format(len(study.trials)))
