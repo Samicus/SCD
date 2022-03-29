@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.trial import Trial
 import optuna
-from optuna.pruners import BasePruner
+from optuna.pruners import PatientPruner, MedianPruner
 
 dirname = os.path.dirname
 PCD_DIR = pjoin(dirname(dirname(dirname(__file__))), "PCD")
@@ -83,6 +83,7 @@ def objective(trial: Trial):
         max_epochs=MAX_EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
+        log_every_n_steps=10
         #fast_dev_run=True   # DEBUG
     )
     
@@ -96,9 +97,14 @@ def objective(trial: Trial):
     
     return trainer.logged_metrics["f1-score"]
 
+patient_pruner = PatientPruner(MedianPruner(), patience=10)
+
 study_name = 'params'  # Unique identifier of the study.
-study = optuna.create_study(study_name=study_name, storage='sqlite:///params.db', direction="maximize")
-study.optimize(objective, n_trials=100, timeout=1200)
+study = optuna.create_study(study_name=study_name, 
+                            storage='sqlite:///params.db', 
+                            direction="maximize",
+                            pruner=patient_pruner)
+study.optimize(objective, n_trials=100)
 
 print("Number of finished trials: {}".format(len(study.trials)))
 
