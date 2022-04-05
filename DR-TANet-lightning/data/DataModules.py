@@ -1,7 +1,7 @@
 from pytorch_lightning import LightningDataModule
 from os.path import join as pjoin
 from torch.utils.data import DataLoader, ConcatDataset
-from data.datasets import VL_CMU_CD, PCD, PCD_debug
+from data.datasets import VL_CMU_CD, PCD
 import os
 
 dirname = os.path.dirname
@@ -27,7 +27,7 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD_debug(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
+        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
         GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG)
         self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
