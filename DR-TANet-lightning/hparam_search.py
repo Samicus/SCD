@@ -6,8 +6,7 @@ from aim.pytorch_lightning import AimLogger
 import argparse
 import torch
 import os
-from util import load_config
-from pytorch_lightning.callbacks import ModelCheckpoint
+from util import load_config, F1tracker
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.trial import Trial
 import optuna
@@ -65,24 +64,27 @@ drtam = hparams["drtam"]
 refinement = hparams["refinement"]
     
 def objective(trial: Trial):
+
+    if parsed_args.aim:
     
-    checkpoint_callback = ModelCheckpoint(
-        os.path.join(CHECKPOINT_DIR, "trial_{}".format(trial.number)), monitor="f1-score"
-    )
-    
-    aim_logger = AimLogger(
-        experiment="trial_{}".format(trial.number),
-        train_metric_prefix='train_',
-        val_metric_prefix='val_',
-        test_metric_prefix='test_'
-        )
+        aim_logger = AimLogger(
+            experiment="trial_{}".format(trial.number),
+            train_metric_prefix='train_',
+            val_metric_prefix='val_',
+            test_metric_prefix='test_'
+            )
+    else:
+        aim_logger = None
+
+    f1_tracker = F1tracker()
     
     trainer = Trainer(
         logger=aim_logger,
-        checkpoint_callback=checkpoint_callback,
         max_epochs=MAX_EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score")],
+        callbacks=[PyTorchLightningPruningCallback(trial, monitor="f1-score"), 
+        f1_tracker
+        ],
         log_every_n_steps=10
         #fast_dev_run=True   # DEBUG
     )
@@ -94,17 +96,22 @@ def objective(trial: Trial):
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)
-    
-    return trainer.logged_metrics["f1-score"]
 
-patient_pruner = PatientPruner(MedianPruner(), patience=10)
+    highest_f1 = max(f1_tracker.f1_scores)
+    
+    return highest_f1
+    print("\nHighest F1-Score of trial{}: {}\n".format(trial.trial_id, highest_f1))
+    #return trainer.logged_metrics["f1-score"]
+
+patient_pruner = PatientPruner(MedianPruner(), patience=20)
 
 study_name = 'params'  # Unique identifier of the study.
 study = optuna.create_study(study_name=study_name, 
                             storage='sqlite:///params.db', 
                             direction="maximize",
-                            pruner=patient_pruner)
-study.optimize(objective, n_trials=100)
+                            pruner=patient_pruner,
+                            load_if_exists=True)
+study.optimize(objective, n_trials=1000)
 
 print("Number of finished trials: {}".format(len(study.trials)))
 
