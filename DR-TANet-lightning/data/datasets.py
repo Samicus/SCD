@@ -6,6 +6,7 @@ from os.path import join as pjoin, splitext as spt
 from data.augmentations import DataAugment
 import albumentations as A
 from PIL import Image
+from util import load_config
 
 def check_validness(f):
     return any([i in spt(f)[1] for i in ['jpg', 'bmp', 'png']])
@@ -20,9 +21,10 @@ class PCD(Dataset):
         self.img_mask_root = pjoin(root,'mask')
         self.filename = list(spt(f)[0] for f in os.listdir(self.img_mask_root) if check_validness(f))
         self.filename.sort()
-        
+        aug_params  = load_config("DR-TANet-lightning/config/augparams.yaml")
         self.AUGMENT_ON = AUGMENT_ON
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, shape=(224, 1024), trial=trial)    # (height, width)
+
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, aug_params, shape=(224, 1024), trial=trial)    # (height, width)
         self.PCD_CONFIG = PCD_CONFIG
         
         self.transform = A.Compose([
