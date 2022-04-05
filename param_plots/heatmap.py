@@ -5,9 +5,13 @@ from typing import DefaultDict
 from typing import List
 from typing import Optional
 
+from matplotlib import axis
+from numpy import argmax
+
 import seaborn as sns
 import numpy as np
 import pandas as pd
+import math
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
@@ -99,7 +103,7 @@ def _get_parallel_coordinate_plot(
     # Set up the graph style.
     fig, ax = plt.subplots()
     cmap = plt.get_cmap("Blues_r" if reversescale else "Reds")
-    ax.set_title("Parallel Coordinate Plot")
+    ax.set_title("Heatmap")
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
 
@@ -170,6 +174,18 @@ def _get_parallel_coordinate_plot(
         param_values.append(values)
     
     
+    sorted_idx = np.argsort(-np.array(obj_org), axis=0)
+    sorted_idx = list(sorted_idx)
+    nr_trials = len(param_values[0])
+    nr_parameters = len(param_values[:])
+    sorted_param_values = np.zeros((nr_parameters,nr_trials))
+    sorted_f1_score = np.zeros((nr_trials))
+    for i in range(0,nr_parameters):
+        for idx, j in enumerate(sorted_idx):
+            sorted_param_values[i,idx] = param_values[i][j]
+            if i == 0:
+                sorted_f1_score[idx] = obj_org[j]
+    """
     if numeric_cat_params_indices:
         # np.lexsort consumes the sort keys the order from back to front.
         # So the values of parameters have to be reversed the order.
@@ -179,9 +195,9 @@ def _get_parallel_coordinate_plot(
         # Since the values are mapped to other categories by the index,
         # the index will be swapped according to the sorted index of numeric params.
         param_values = [list(np.array(v)[sorted_idx]) for v in param_values]
+    """  
 
-
-    heatmap(pd.DataFrame(np.array(param_values)))
+    heatmap(pd.DataFrame(np.array(sorted_param_values)).transpose(), sorted_params, var_names, sorted_f1_score)
     
     
     # Draw multiple line plots and axes.
@@ -218,10 +234,34 @@ def _get_parallel_coordinate_plot(
     """
     return ax
 
-def heatmap(tab):
-    print(tab)
-    tab = tab.div(tab.max(axis=1), axis=0)
+def heatmap(tab, sorted_params, var_names, sorted_f1_score):
     
-    ax = sns.heatmap(tab, linewidths=.2 ,robust=True ,annot_kws = {'size':40})
+    
+    tab = tab.div(tab.max(axis=0), axis=1)
+
+    ax = sns.heatmap(tab, linewidths=.2 ,robust=True ,annot_kws = {'size':40}, cmap='Reds')
     ax.tick_params(labelsize=14)
     ax.figure.set_size_inches((12, 10))
+    del(var_names[0])
+    sorted_f1_score = [ '%.3f' % elem for elem in sorted_f1_score ]
+    plt.yticks(range(len(sorted_f1_score)), sorted_f1_score, rotation=0)
+    plt.xticks(range(len(sorted_params)), var_names, rotation=15)
+    plt.ylabel("F1-score")
+    """
+    for i, p_name in enumerate(sorted_params):
+        ax2 = ax.twinx()
+        ax2.set_ylim(min(param_values[i]), max(param_values[i]))
+        if _is_log_scale(trials, p_name):
+            ax2.set_yscale("log")
+        ax2.spines["top"].set_visible(False)
+        ax2.spines["bottom"].set_visible(False)
+        ax2.xaxis.set_visible(False)
+        ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
+        ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
+        if p_name in cat_param_names:
+            idx = cat_param_names.index(p_name)
+            tick_pos = cat_param_ticks[idx]
+            tick_labels = cat_param_values[idx]
+            ax2.set_yticks(tick_pos)
+            ax2.set_yticklabels(tick_labels)
+    """
