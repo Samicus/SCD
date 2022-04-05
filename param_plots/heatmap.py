@@ -239,7 +239,7 @@ def heatmap(tab, sorted_params, var_names, sorted_f1_score):
     
     tab = tab.div(tab.max(axis=0), axis=1)
 
-    ax = sns.heatmap(tab, linewidths=.2 ,robust=True ,annot_kws = {'size':40}, cmap='Reds')
+    ax = sns.heatmap(tab, linewidths=.2 ,robust=True ,annot_kws = {'size':40}, cmap='magma_r')
     ax.tick_params(labelsize=14)
     ax.figure.set_size_inches((12, 10))
     del(var_names[0])
