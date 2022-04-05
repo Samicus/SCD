@@ -23,10 +23,12 @@ class TANet(LightningModule):
     def __init__(self, encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=False):
         super(TANet, self).__init__()
         self.EXPERIMENT_NAME = EXPERIMENT_NAME
-        if 'VL_CMU_CD' in EXPERIMENT_NAME:
+        if 'PCD' in EXPERIMENT_NAME:
+            self.WEIGHT = torch.tensor(2)
+        elif 'VL_CMU_CD' in EXPERIMENT_NAME:
             self.WEIGHT = torch.tensor(4)
         else:
-            self.WEIGHT = torch.tensor(2)
+            self.WEIGHT = torch.tensor(1)
         self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False

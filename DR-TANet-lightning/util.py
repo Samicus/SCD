@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 import yaml
 from sklearn.metrics import confusion_matrix
+from pytorch_lightning.callbacks import Callback
 
 __all__ = ['Upsample', 'upsample']
 
@@ -76,3 +77,12 @@ def load_config(hparams_path):
     with open(hparams_path) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
         return config
+
+class F1tracker(Callback):
+
+  def __init__(self):
+    self.f1_scores = []
+    
+  def on_validation_epoch_end(self, trainer, module):
+    f1_score = trainer.logged_metrics["f1-score"] # access it here
+    self.f1_scores.append(f1_score)
