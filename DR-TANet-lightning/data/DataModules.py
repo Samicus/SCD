@@ -16,7 +16,7 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial, EVAL="PCD"):
+    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial=None, EVAL="PCD"):
         self.set_nr = set_nr
         self.augmentations = augmentations
         self.NUM_WORKERS = NUM_WORKERS

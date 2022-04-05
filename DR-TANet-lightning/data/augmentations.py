@@ -46,9 +46,9 @@ class DataAugment:
         if trial:
             # MOSAIC
             self.mosaic_th = trial.suggest_uniform("mosaic_threshold", 0.0, 1.0)
-            self.translate = trial.suggest_uniform("mosaic_translate", 0.0, 1.0)
-            self.scale = trial.suggest_uniform("mosaic_scale", 0.0, 0.99)
-            self.rotation = trial.suggest_int("mosaic_rotation", 0, 90)
+            mosaic_translate = trial.suggest_uniform("mosaic_translate", 0.0, 1.0)
+            mosaic_scale = trial.suggest_uniform("mosaic_scale", 0.0, 0.99)
+            mosaic_rotation = trial.suggest_int("mosaic_rotation", 0, 90)
             
             # Random Erase
             self.random_erase_th = trial.suggest_uniform("random_erase_threshold", 0.0, 1.0)
