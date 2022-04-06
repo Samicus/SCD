@@ -137,6 +137,8 @@ class TANet(LightningModule):
             "val_loss": val_loss
             }
         
+        torch.cuda.empty_cache()
+        
         return metrics
     
     def gen_img(self, inputs_test, preds, mask_test, batch_idx, LOG_IMG):
