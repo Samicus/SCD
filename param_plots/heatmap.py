@@ -6,6 +6,7 @@ from typing import List
 from typing import Optional
 
 from matplotlib import axis
+from matplotlib.pyplot import ylabel
 from numpy import argmax
 
 import seaborn as sns
@@ -238,14 +239,18 @@ def heatmap(tab, sorted_params, var_names, sorted_f1_score):
     
     
     tab = tab.div(tab.max(axis=0), axis=1)
-
-    ax = sns.heatmap(tab, linewidths=.2 ,robust=True ,annot_kws = {'size':40}, cmap='magma_r')
-    ax.tick_params(labelsize=14)
-    ax.figure.set_size_inches((12, 10))
     del(var_names[0])
     sorted_f1_score = [ '%.3f' % elem for elem in sorted_f1_score ]
-    plt.yticks(range(len(sorted_f1_score)), sorted_f1_score, rotation=0)
-    plt.xticks(range(len(sorted_params)), var_names, rotation=15)
+    ax = sns.heatmap(tab, linewidths=.2 ,robust=False ,annot_kws = {'size':10}, cmap='magma_r', xticklabels=var_names, yticklabels= sorted_f1_score)
+    plt.xticks(rotation=-45)
+
+    ax.tick_params(labelsize=7)
+    ax.figure.set_size_inches((40, 40))
+    
+    
+    #plt.yticks(range(len(sorted_f1_score)), sorted_f1_score, rotation=0)
+    #plt.xticks(range(len(sorted_params)), var_names, rotation=15)
+
     plt.ylabel("F1-score")
     """
     for i, p_name in enumerate(sorted_params):
