@@ -100,7 +100,7 @@ def objective(trial: Trial):
     highest_f1 = max(f1_tracker.f1_scores)
     
     return highest_f1
-    print("\nHighest F1-Score of trial{}: {}\n".format(trial.trial_id, highest_f1))
+    #print("\nHighest F1-Score of trial{}: {}\n".format(trial.trial_id, highest_f1))
     #return trainer.logged_metrics["f1-score"]
 
 patient_pruner = PatientPruner(MedianPruner(), patience=20)

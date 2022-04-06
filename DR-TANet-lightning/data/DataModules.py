@@ -31,8 +31,8 @@ class PCDdataModule(LightningDataModule):
         GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, trial=trial)
         self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
-        TSUNAMI_test = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
-        GSV_test = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        TSUNAMI_test = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        GSV_test = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
         concat_data_val = ConcatDataset([TSUNAMI_test, GSV_test])
         
         if EVAL == 'PCD':
