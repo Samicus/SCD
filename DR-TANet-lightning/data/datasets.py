@@ -1,4 +1,5 @@
 import os
+from random import random
 import cv2
 import numpy as np
 from torch.utils.data import Dataset
@@ -85,7 +86,7 @@ class PCD(Dataset):
     def crop(self, img_t0, img_t1, mask):
         
         _, h, w = img_t0.shape
-        crop_size = 256
+        crop_size = 224
         
         try:
             x_l = np.random.randint(0, w - crop_size)
@@ -97,9 +98,14 @@ class PCD(Dataset):
         except ValueError:
             y_l = 0
         y_r = y_l + crop_size
-
-        input_ = np.concatenate((img_t0[:, y_l:y_r, x_l:x_r], img_t1[:, y_l:y_r, x_l:x_r]), axis=0)
-        mask_ = mask[:, y_l:y_r, x_l:x_r]
+        
+        # Random crop
+        img_t0 = img_t0[:, y_l:y_r, x_l:x_r]
+        img_t1 = img_t1[:, y_l:y_r, x_l:x_r]
+        mask = mask[:, y_l:y_r, x_l:x_r]
+        
+        input_ = np.concatenate((img_t0, img_t1), axis=0)
+        mask_ = mask
         
         return input_, mask_
 

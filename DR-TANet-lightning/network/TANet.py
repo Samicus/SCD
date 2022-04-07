@@ -2,7 +2,7 @@ from util import upsample
 from network.TANet_element import *
 from pytorch_lightning import LightningModule
 import torch.nn.functional as F
-from torchmetrics.functional import precision, recall, f1_score, accuracy
+from torchmetrics import ConfusionMatrix
 import torch.nn as nn
 import torch
 from torch.optim import Adam
@@ -32,6 +32,12 @@ class TANet(LightningModule):
         self.DETERMINISTIC = DETERMINISTIC
         self.save_hyperparameters()
         self.automatic_optimization = False
+        
+        self.confusion_matrix = ConfusionMatrix(num_classes=2)
+        #self.f1_score = F1Score(num_classes=2, average=None, mdmc_average='samplewise')
+        #self.precision = Precision(num_classes=2, average=None, mdmc_average='samplewise')
+        #self.recall = Recall(num_classes=2, average=None, mdmc_average='samplewise')
+        #self.accuracy = Accuracy(num_classes=2, average=None, mdmc_average='samplewise')
         
         # Network Layers
         self.encoder1, channels = get_encoder(encoder_arch,pretrained=True)
@@ -112,23 +118,44 @@ class TANet(LightningModule):
         preds[preds > 0.5] = 1
         preds[preds <= 0.5] = 0
         
-        mask_test = mask_test.int()
-        precision_batch = precision(preds, mask_test)
-        recall_batch = recall(preds, mask_test)
-        accuracy_batch = accuracy(preds, mask_test)
-        f1_score_batch = f1_score(preds, mask_test)
+        [[TN, FP], [ FN, TP]] = self.confusion_matrix(preds, mask_test.int())
+        
+        precision_change = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+        recall_change = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+        accuracy_change = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+        f1_score_change = 2.0 * recall_change * precision_change / (precision_change + recall_change) if (precision_change + recall_change) != 0.0 else 0.0
+        
+        # Invert (F1-Score for no change)
+        preds = 1.0 - preds
+        mask_test = 1.0 - mask_test
+        
+        [[TN, FP], [ FN, TP]] = self.confusion_matrix(preds, mask_test.int())
+        
+        precision_no_change = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+        recall_no_change = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+        accuracy_no_change = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+        f1_score_no_change = 2.0 * recall_no_change * precision_no_change / (precision_no_change + recall_no_change) if (precision_no_change + recall_no_change) != 0.0 else 0.0
+        
+        # Mean for metrics of change and no change
+        precision = (precision_change + precision_no_change) / 2.0
+        recall = (recall_change + recall_no_change) / 2.0
+        accuracy = (accuracy_change + accuracy_no_change) / 2.0
+        f1_score = (f1_score_change + f1_score_no_change) / 2.0
         
         if LOG_IMG == True or LOG_IMG == None:
             
             self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
+            self.on_train_start
 
         metrics = {
-            'precision': precision_batch,
-            'recall': recall_batch,
-            "accuracy": accuracy_batch,
-            'f1-score': f1_score_batch,
+            'precision': precision,
+            'recall': recall,
+            "accuracy": accuracy,
+            'f1-score': f1_score,
             "val_loss": val_loss
             }
+        
+        torch.cuda.empty_cache()
         
         return metrics
     
