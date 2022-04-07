@@ -120,14 +120,32 @@ class TANet(LightningModule):
         
         [[TN, FP], [ FN, TP]] = self.confusion_matrix(preds, mask_test.int())
         
-        precision = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
-        recall = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
-        accuracy = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
-        f1_score = 2.0 * recall * precision / (precision + recall) if (precision + recall) != 0.0 else 0.0
+        precision_change = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+        recall_change = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+        accuracy_change = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+        f1_score_change = 2.0 * recall_change * precision_change / (precision_change + recall_change) if (precision_change + recall_change) != 0.0 else 0.0
+        
+        # Invert (F1-Score for no change)
+        preds = 1.0 - preds
+        mask_test = 1.0 - mask_test
+        
+        [[TN, FP], [ FN, TP]] = self.confusion_matrix(preds, mask_test.int())
+        
+        precision_no_change = TP / (TP + FP) if (TP + FP) != 0.0 else 0.0
+        recall_no_change = TP / (TP + FN) if (TP + FN) != 0.0 else 0.0
+        accuracy_no_change = (TP + TN) / (TP + FP + FN + TN) if (TP + FP + FN + TN) != 0.0 else 0.0
+        f1_score_no_change = 2.0 * recall_no_change * precision_no_change / (precision_no_change + recall_no_change) if (precision_no_change + recall_no_change) != 0.0 else 0.0
+        
+        # Mean for metrics of change and no change
+        precision = (precision_change + precision_no_change) / 2.0
+        recall = (recall_change + recall_no_change) / 2.0
+        accuracy = (accuracy_change + accuracy_no_change) / 2.0
+        f1_score = (f1_score_change + f1_score_no_change) / 2.0
         
         if LOG_IMG == True or LOG_IMG == None:
             
             self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
+            self.on_train_start
 
         metrics = {
             'precision': precision,
