@@ -142,10 +142,12 @@ class TANet(LightningModule):
         accuracy = (accuracy_change + accuracy_no_change) / 2.0
         f1_score = (f1_score_change + f1_score_no_change) / 2.0
         
+        """
         if LOG_IMG == True or LOG_IMG == None:
             
             self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
             self.on_train_start
+        """
 
         metrics = {
             'precision': precision,

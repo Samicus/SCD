@@ -16,8 +16,8 @@ class DataAugment:
         self.index = None
         self.shape = shape
 
-        random_shadow_p = .5
-        color_jitter_p = .5
+        random_shadow_p = 0.417 # hparam search result
+        color_jitter_p = 0.3112 # hparam search result
         if trial:
             random_shadow_p = trial.suggest_uniform("random_shadow_threshold", 0.0, 1.0)
             color_jitter_p = trial.suggest_uniform("color_jitter_threshold", 0.0, 1.0)

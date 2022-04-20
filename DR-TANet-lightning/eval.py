@@ -9,6 +9,7 @@ from util import load_config
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--checkpoint", required=True,
 	help="path to checkpoints")
+parser.add_argument("--cpu", action="store_true")
 parser.add_argument("-c", "--config", required=True,
 	help="path to config")
 parser.add_argument("-d", "--dataset", required=True,
@@ -38,6 +39,10 @@ model = TANet.load_from_checkpoint(
                         checkpoint_path=parsed_args.checkpoint,
                         map_location=None,
                         )
-trainer = Trainer(gpus=1)
+if parsed_args.cpu:
+	trainer = Trainer(gpus=0)
+else:
+	trainer = Trainer(gpus=1)
+
 data_module = PCDdataModule(SET_NUM, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL=parsed_args.dataset)
 trainer.test(model, data_module)
