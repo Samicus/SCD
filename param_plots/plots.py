@@ -6,10 +6,12 @@ from optuna.visualization.matplotlib import plot_optimization_history
 #from optuna.visualization.matplotlib import plot_parallel_coordinate
 from optuna.visualization.matplotlib import plot_param_importances
 #from optuna.visualization.matplotlib import plot_slice
+
 from slice_plot import plot_slice
 from matplotlib import pyplot as plt
 from parallel_coordinate import plot_parallel_coordinate
 from heatmap import plot_heatmap
+from heatmap_v2 import plot_heatmap_v2
 
 
 study_name = 'params'
@@ -41,5 +43,22 @@ plt.savefig("Slice.png")
 """
 #plot_slice(study)
 #plt.figure()
-plot_heatmap(study)
+#plot_heatmap(study)
+plot_heatmap_v2(study)
+#plot_slice(study)
+#plot_parallel_coordinate(study)
+#plot_optimization_history(study)
+#plot_intermediate_values(study)
+#plot_edf(study)
+#plot_contour(study)
+#plot_param_importances(study)
 plt.show()
+
+print("Best trial:")
+trial = study.best_trial
+
+print("  Value: {}".format(trial.value))
+
+print("  Params: ")
+for key, value in trial.params.items():
+    print("    {}: {}".format(key, value))

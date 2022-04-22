@@ -241,7 +241,7 @@ def heatmap(tab, sorted_params, var_names, sorted_f1_score):
     tab = tab.div(tab.max(axis=0), axis=1)
     del(var_names[0])
     sorted_f1_score = [ '%.3f' % elem for elem in sorted_f1_score ]
-    ax = sns.heatmap(tab, linewidths=.2 ,robust=False ,annot_kws = {'size':10}, cmap='magma_r', xticklabels=var_names, yticklabels= sorted_f1_score)
+    ax = sns.heatmap(tab, linewidths=.2 ,robust=False ,annot_kws = {'size':10}, cmap='YlGnBu', xticklabels=var_names, yticklabels= sorted_f1_score)
     plt.xticks(rotation=-45)
 
     ax.tick_params(labelsize=7)

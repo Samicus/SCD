@@ -84,7 +84,7 @@ def _get_slice_plot(
 
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-
+    
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
         _, ax = plt.subplots()
@@ -116,7 +116,6 @@ def _get_slice_plot(
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Slice Plot")
-
         # Draw a scatter plot.
         sc = _generate_slice_subplot(
             trials, sorted_params[0], axs, cmap, padding_ratio, obj_values, target_name
@@ -127,20 +126,26 @@ def _get_slice_plot(
         fighight = matplotlib.rcParams["figure.figsize"][1]
         # Ensure that each subplot has a minimum width without relying on auto-sizing.
         fig, axs = plt.subplots(
-            1, n_params, sharey=True, figsize=(min_figwidth * n_params, fighight)
+            int(n_params/2), 2, sharey=True, figsize=(min_figwidth * n_params, fighight)
         )
         fig.suptitle("Slice Plot")
-
+        fig.text(0.04, 0.5, 'F1-Score', va='center', rotation='vertical', size=20)
+        
         # Draw scatter plots.
         for i, param in enumerate(sorted_params):
-            ax = axs[i]
+            j=0
+            idx = i
+            if i >= 5:
+                j = 1
+                idx = i-5
+            ax = axs[idx, j]
             sc = _generate_slice_subplot(
                 trials, param, ax, cmap, padding_ratio, obj_values, target_name
             )
-
+    
     axcb = fig.colorbar(sc, ax=axs)
+    
     axcb.set_label("#Trials")
-
     return axs
 
 
@@ -157,12 +162,15 @@ def _generate_slice_subplot(
     y_values = []
     trial_numbers = []
     scale = None
+    
     for t, obj_v in zip(trials, obj_values):
         if param in t.params:
             x_values.append(t.params[param])
             y_values.append(obj_v)
             trial_numbers.append(t.number)
-    ax.set(xlabel=param, ylabel=target_name)
+    
+    #ax.set(ylabel=target_name)
+    ax.set_title(param)
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
@@ -171,8 +179,8 @@ def _generate_slice_subplot(
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
     ax.set_xlim(xlim[0], xlim[1])
-    
-    sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey")
+   
+    sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey", label=param)
     ax.label_outer()
 
     return sc
