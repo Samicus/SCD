@@ -1,0 +1,10 @@
+# Trace the model and generate .pt file
+python3 DR-TANet-lightning/torch_tracing.py 
+    --checkpoint ~/Desktop/epoch\=1461-step\=39473.ckpt 
+    --config DR-TANet-lightning/config/augmentations/vanilla.yaml 
+    --data_path ~/Documents/git/PCD/GSV/data/
+
+mkdir build
+cmake -DCMAKE_PREFIX_PATH=~/libtorch
+cmake --build . --config Release
+./mobile_application ../traced_DR_TANet_ref_1024x224.pt

@@ -40,8 +40,10 @@ class Temporal_Attention(nn.Module):
 
     def forward(self, feature_map):
 
-        fm_t0, fm_t1 = torch.split(feature_map, feature_map.size()[1]//2, 1)
-        assert fm_t0.size() == fm_t1.size(), 'The size of feature maps of image t0 and t1 should be same.'
+        #fm_t0, fm_t1 = torch.split(feature_map, feature_map.size()[1]//2, 1)
+        #fm_t0, fm_t1 = torch.split(feature_map, torch.div(feature_map.size()[1], 2, rounding_mode='trunc'), 1)  # Keep current behavior
+        fm_t0, fm_t1 = torch.split(feature_map, torch.div(feature_map.size()[1], 2, rounding_mode='floor'), 1) # Actual floor div
+        #assert fm_t0.size() == fm_t1.size(), 'The size of feature maps of image t0 and t1 should be same.'
 
         batch, _, h, w = fm_t0.size()
 
