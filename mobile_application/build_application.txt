@@ -7,4 +7,4 @@ python3 DR-TANet-lightning/torch_tracing.py
 mkdir build
 cmake -DCMAKE_PREFIX_PATH=~/libtorch
 cmake --build . --config Release
-./mobile_application ../traced_DR_TANet_ref_1024x224.pt
+./mobile_application traced_DR_TANet_ref_1024x224.pt
