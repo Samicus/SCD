@@ -6,6 +6,8 @@
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
+
 
 auto ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze=false, int unsqueeze_dim = 0)
 {
@@ -27,13 +29,6 @@ auto ToInput(at::Tensor tensor_image)
 {
     // Create a vector of inputs.
     return std::vector<torch::jit::IValue>{tensor_image};
-}
-
-auto ToCvImage(at::Tensor tensor)
-{
-    int width = tensor.sizes()[0];
-    int height = tensor.sizes()[1];
-    return cv::Mat(height, width, CV_8UC1);
 }
 
 auto transpose(at::Tensor tensor, c10::IntArrayRef dims = { 3, 2, 1, 0})
@@ -144,15 +139,33 @@ int main(int argc, const char* argv[]) {
     // Compute prediction
     at::Tensor prediction = DR_TANet.forward(dataLoader->getImagePair()).toTensor();  
     // Activation
-    //std::cout << "TEST" << std::endl;
-    //std::cout << prediction.sizes() << std::endl;
     prediction = torch::sigmoid(prediction);
-    prediction = torch::where(transpose(prediction.squeeze(0), { (1),(2),(0) }) > 0.5, 255, 0);
-    cv::Mat predImg = ToCvImage(prediction);
+    prediction = torch::where(prediction > 0.5, 255, 0);
+    prediction = prediction.squeeze(0).to(torch::kInt);
+
+    //std::cout << "max:" << std::endl;
+    //std::cout << torch::max(prediction) << std::endl;
+    //std::cout << "min:" << std::endl;
+    //std::cout << torch::min(prediction) << std::endl;
+
+    cv::Mat predMat = cv::Mat(prediction.sizes()[2], prediction.sizes()[1], CV_8U);
+
+    std::memcpy(prediction.data_ptr(), predMat.data, sizeof(torch::kInt)*prediction.numel());
+
+    //cv::Mat binaryMat;
+
+    //cv::threshold(predMat, binaryMat, 0.5, 255, 0);
+
+    //std::cout << "predMat:" << std::endl;
+    //std::cout << binaryMat << std::endl;
+
+    //Show the results
+    cv::namedWindow("Output", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Output", predMat);
 
     // show live and wait for a key with timeout long enough to show images
     // Show prediction
-    cv::imshow("Live", predImg);
+    //cv::imshow("Live", predImg);
     if (cv::waitKey(5) >= 0)
         break;
   }
