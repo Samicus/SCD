@@ -40,4 +40,6 @@ input_data = torch.tensor(input_data).unsqueeze(dim=0)
 
 traced_script_module = torch.jit.trace(model, input_data)
 
+# ADD MOBILE OPTIMIZATION
+
 traced_script_module.save("mobile_application/traced_DR_TANet_ref_1024x224.pt")

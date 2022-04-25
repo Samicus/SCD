@@ -7,27 +7,81 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
-using namespace cv;
-using namespace std;
+auto ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze=false, int unsqueeze_dim = 0)
+{
+    at::Tensor tensor_image = torch::from_blob(img.data, { img.rows, img.cols, 3 }, at::kByte);
 
-// This is the Circle2D class.
-class DataLoading
+    if (unsqueeze)
+    {
+        tensor_image.unsqueeze_(unsqueeze_dim);
+    }
+    
+    if (show_output)
+    {
+        std::cout << tensor_image.slice(2, 0, 1) << std::endl;
+    }
+    return tensor_image;
+}
+
+auto ToInput(at::Tensor tensor_image)
+{
+    // Create a vector of inputs.
+    return std::vector<torch::jit::IValue>{tensor_image};
+}
+
+auto ToCvImage(at::Tensor tensor)
+{
+    int width = tensor.sizes()[0];
+    int height = tensor.sizes()[1];
+    return cv::Mat(height, width, CV_8UC1);
+}
+
+auto transpose(at::Tensor tensor, c10::IntArrayRef dims = { 3, 2, 1, 0})
+{
+    tensor = tensor.permute(dims);
+    return tensor;
+}
+
+class DataLoader
 {
 public:
 
-	DataLoading()
+	DataLoader()
 	{
-
+    firstFrame = 0;
+    currentFrame = 0;
 	}
 
-	// Return the number of circle objects
-	static uint8_t*** getImagePair()
-	{
-		return imagePair;
-	}
+  void initImagePair(cv::Mat frame)
+  {
+    firstFrame = frame.clone(); // Saves only the first frame
+    currentFrame = frame; // Keeps up with video feed
+  }
+
+  auto getImagePair()
+  {
+    
+    ////////////////////////////////////////////////////////////////////////////
+    
+    // Process image pair
+    imagePair = torch::cat({ToTensor(firstFrame), ToTensor(currentFrame)}, 2);
+
+    // convert the tensor into float and scale it 
+    imagePair = imagePair.toType(c10::kFloat).div(255);
+    // swap axis 
+    imagePair = transpose(imagePair, { (2),(1),(0) });
+    //add batch dim (an inplace operation just like in pytorch)
+    imagePair.unsqueeze_(0);
+
+    return ToInput(imagePair);
+
+    ///////////////////////////////////////////////////////////////////////////
+  }
 
 private:	
-  static uint8_t *** imagePair; // 1024 x 224, 2 * 224 = 448, RGB
+  cv::Mat firstFrame;
+  cv::Mat currentFrame;
+  at::Tensor imagePair;
 };
 
 int main(int argc, const char* argv[]) {
@@ -37,10 +91,10 @@ int main(int argc, const char* argv[]) {
   }
 
 
-  torch::jit::script::Module module;
+  torch::jit::script::Module DR_TANet;
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
-    module = torch::jit::load(argv[1]);
+    DR_TANet = torch::jit::load(argv[1]);
   }
   catch (const c10::Error& e) {
     std::cerr << "error loading the model\n";
@@ -49,9 +103,9 @@ int main(int argc, const char* argv[]) {
 
   std::cout << "Model loaded successfully\n";
 
-  Mat frame;
+  cv::Mat frame;
   //--- INITIALIZE VIDEOCAPTURE
-  VideoCapture cap;
+  cv::VideoCapture cap;
   // open the default camera using default API
   // cap.open(0);
   // OR advance usage: select any API backend
@@ -61,24 +115,45 @@ int main(int argc, const char* argv[]) {
   cap.open(deviceID, apiID);
   // check if we succeeded
   if (!cap.isOpened()) {
-      cerr << "ERROR! Unable to open camera\n";
+      std::cerr << "ERROR! Unable to open camera\n";
       return -1;
   }
   //--- GRAB AND WRITE LOOP
-  cout << "Start grabbing" << endl
-      << "Press any key to terminate" << endl;
+  std::cout << "Start grabbing" << std::endl
+      << "Press any key to terminate" << std::endl;
+
+  DataLoader *dataLoader = new DataLoader();
+
+  bool onFirstFrame = true;
   for (;;)
   {
-      // wait for a new frame from camera and store it into 'frame'
-      cap.read(frame);
-      // check if we succeeded
-      if (frame.empty()) {
-          cerr << "ERROR! blank frame grabbed\n";
-          break;
-      }
-      // show live and wait for a key with timeout long enough to show images
-      imshow("Live", frame);
-      if (waitKey(5) >= 0)
-          break;
+    // wait for a new frame from camera and store it into 'frame'
+    cap.read(frame);
+    // check if we succeeded
+    if (frame.empty()) {
+        std::cerr << "ERROR! blank frame grabbed\n";
+        break;
+    }
+
+    if (onFirstFrame)
+    {
+      dataLoader->initImagePair(frame);
+      onFirstFrame = false;
+    }
+
+    // Compute prediction
+    at::Tensor prediction = DR_TANet.forward(dataLoader->getImagePair()).toTensor();  
+    // Activation
+    //std::cout << "TEST" << std::endl;
+    //std::cout << prediction.sizes() << std::endl;
+    prediction = torch::sigmoid(prediction);
+    prediction = torch::where(transpose(prediction.squeeze(0), { (1),(2),(0) }) > 0.5, 255, 0);
+    cv::Mat predImg = ToCvImage(prediction);
+
+    // show live and wait for a key with timeout long enough to show images
+    // Show prediction
+    cv::imshow("Live", predImg);
+    if (cv::waitKey(5) >= 0)
+        break;
   }
 }
