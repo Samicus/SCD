@@ -31,6 +31,22 @@ auto ToInput(at::Tensor tensor_image)
     return std::vector<torch::jit::IValue>{tensor_image};
 }
 
+auto ToCvImage(at::Tensor tensor)
+{
+    int width = tensor.sizes()[1];
+    int height = tensor.sizes()[2];
+    try
+    {
+        cv::Mat output_mat(cv::Size{ height, width }, CV_8U, tensor.data_ptr<uchar>());        
+        return output_mat.clone();
+    }
+    catch (const c10::Error& e)
+    {
+        std::cout << "an error has occured : " << e.msg() << std::endl;
+    }
+    return cv::Mat(height, width, CV_8U);
+}
+
 auto transpose(at::Tensor tensor, c10::IntArrayRef dims = { 3, 2, 1, 0})
 {
     tensor = tensor.permute(dims);
@@ -43,14 +59,24 @@ public:
 
 	DataLoader()
 	{
-    firstFrame = 0;
-    currentFrame = 0;
+    firstFrame = 0.0;
+    currentFrame = 0.0;
 	}
 
   void initImagePair(cv::Mat frame)
   {
     firstFrame = frame.clone(); // Saves only the first frame
     currentFrame = frame; // Keeps up with video feed
+  }
+
+  cv::Mat getFirstFrame()
+  {
+    return firstFrame;
+  }
+
+  cv::Mat getCurrentFrame()
+  {
+    return currentFrame;
   }
 
   auto getImagePair()
@@ -62,7 +88,7 @@ public:
     imagePair = torch::cat({ToTensor(firstFrame), ToTensor(currentFrame)}, 2);
 
     // convert the tensor into float and scale it 
-    imagePair = imagePair.toType(c10::kFloat).div(255);
+    imagePair = imagePair.to(torch::kFloat).div(255.0);
     // swap axis 
     imagePair = transpose(imagePair, { (2),(1),(0) });
     //add batch dim (an inplace operation just like in pytorch)
@@ -119,7 +145,8 @@ int main(int argc, const char* argv[]) {
 
   DataLoader *dataLoader = new DataLoader();
 
-  bool onFirstFrame = true;
+  uint_fast8_t loopCntr = 0;
+  bool checkLoop = true;
   for (;;)
   {
     // wait for a new frame from camera and store it into 'frame'
@@ -130,10 +157,10 @@ int main(int argc, const char* argv[]) {
         break;
     }
 
-    if (onFirstFrame)
+    if (checkLoop && loopCntr < 5)
     {
       dataLoader->initImagePair(frame);
-      onFirstFrame = false;
+      checkLoop = false;
     }
 
     // Compute prediction
@@ -141,32 +168,20 @@ int main(int argc, const char* argv[]) {
     // Activation
     prediction = torch::sigmoid(prediction);
     prediction = torch::where(prediction > 0.5, 255, 0);
-    prediction = prediction.squeeze(0).to(torch::kInt);
-
-    //std::cout << "max:" << std::endl;
-    //std::cout << torch::max(prediction) << std::endl;
-    //std::cout << "min:" << std::endl;
-    //std::cout << torch::min(prediction) << std::endl;
-
-    cv::Mat predMat = cv::Mat(prediction.sizes()[2], prediction.sizes()[1], CV_8U);
-
-    std::memcpy(prediction.data_ptr(), predMat.data, sizeof(torch::kInt)*prediction.numel());
-
-    //cv::Mat binaryMat;
-
-    //cv::threshold(predMat, binaryMat, 0.5, 255, 0);
-
-    //std::cout << "predMat:" << std::endl;
-    //std::cout << binaryMat << std::endl;
+    prediction = prediction.squeeze(0).to(torch::kUInt8);
+    
+    cv::Mat predImg = ToCvImage(prediction);
+    cv::rotate(predImg, predImg, cv::ROTATE_90_CLOCKWISE);
+    cv::flip(predImg, predImg, 1);
 
     //Show the results
-    cv::namedWindow("Output", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Output", predMat);
-
-    // show live and wait for a key with timeout long enough to show images
-    // Show prediction
-    //cv::imshow("Live", predImg);
+    cv::imshow("t0", dataLoader->getFirstFrame());
+    cv::imshow("t1", dataLoader->getCurrentFrame());
+    cv::imshow("Output", predImg);
+    
     if (cv::waitKey(5) >= 0)
         break;
+
+    loopCntr++;
   }
 }
