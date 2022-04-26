@@ -9,9 +9,9 @@
 #include <opencv2/opencv.hpp>
 
 
-auto ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze=false, int unsqueeze_dim = 0)
+torch::Tensor ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze=false, int unsqueeze_dim = 0)
 {
-    at::Tensor tensor_image = torch::from_blob(img.data, { img.rows, img.cols, 3 }, at::kByte);
+    torch::Tensor tensor_image = torch::from_blob(img.data, { img.rows, img.cols, 3 }, torch::kByte);
 
     if (unsqueeze)
     {
@@ -25,13 +25,13 @@ auto ToTensor(cv::Mat img, bool show_output = false, bool unsqueeze=false, int u
     return tensor_image;
 }
 
-auto ToInput(at::Tensor tensor_image)
+std::vector<torch::jit::IValue> ToInput(torch::Tensor tensor_image)
 {
     // Create a vector of inputs.
     return std::vector<torch::jit::IValue>{tensor_image};
 }
 
-auto ToCvImage(at::Tensor tensor)
+cv::Mat ToCvImage(torch::Tensor tensor)
 {
     int width = tensor.sizes()[1];
     int height = tensor.sizes()[2];
@@ -47,7 +47,7 @@ auto ToCvImage(at::Tensor tensor)
     return cv::Mat(height, width, CV_8U);
 }
 
-auto transpose(at::Tensor tensor, c10::IntArrayRef dims = { 3, 2, 1, 0})
+torch::Tensor transpose(torch::Tensor tensor, c10::IntArrayRef dims = { 3, 2, 1, 0})
 {
     tensor = tensor.permute(dims);
     return tensor;
@@ -69,6 +69,14 @@ public:
     currentFrame = frame; // Keeps up with video feed
   }
 
+  cv::Mat getPredictionFrame(torch::Tensor prediction)
+  {
+    cv::Mat predImg = ToCvImage(prediction);
+    cv::rotate(predImg, predImg, cv::ROTATE_90_CLOCKWISE);
+    cv::flip(predImg, predImg, 1);
+    return predImg;
+  }
+
   cv::Mat getFirstFrame()
   {
     return firstFrame;
@@ -79,7 +87,7 @@ public:
     return currentFrame;
   }
 
-  auto getImagePair()
+  std::vector<torch::jit::IValue> getImagePair()
   {
     
     ////////////////////////////////////////////////////////////////////////////
@@ -102,7 +110,7 @@ public:
 private:	
   cv::Mat firstFrame;
   cv::Mat currentFrame;
-  at::Tensor imagePair;
+  torch::Tensor imagePair;
 };
 
 int main(int argc, const char* argv[]) {
@@ -164,20 +172,16 @@ int main(int argc, const char* argv[]) {
     }
 
     // Compute prediction
-    at::Tensor prediction = DR_TANet.forward(dataLoader->getImagePair()).toTensor();  
+    torch::Tensor prediction = DR_TANet.forward(dataLoader->getImagePair()).toTensor();  
     // Activation
     prediction = torch::sigmoid(prediction);
     prediction = torch::where(prediction > 0.5, 255, 0);
     prediction = prediction.squeeze(0).to(torch::kUInt8);
-    
-    cv::Mat predImg = ToCvImage(prediction);
-    cv::rotate(predImg, predImg, cv::ROTATE_90_CLOCKWISE);
-    cv::flip(predImg, predImg, 1);
 
     //Show the results
     cv::imshow("t0", dataLoader->getFirstFrame());
     cv::imshow("t1", dataLoader->getCurrentFrame());
-    cv::imshow("Output", predImg);
+    cv::imshow("Output", dataLoader->getPredictionFrame(prediction));
     
     if (cv::waitKey(5) >= 0)
         break;

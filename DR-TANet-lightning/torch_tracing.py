@@ -3,6 +3,7 @@ from data.datasets import PCD
 import argparse
 from util import load_config
 import torch
+from torch.utils.mobile_optimizer import optimize_for_mobile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--data_path", required=True,
@@ -39,7 +40,10 @@ input_data, _ = pcd_data.get_random_image()
 input_data = torch.tensor(input_data).unsqueeze(dim=0)
 
 traced_script_module = torch.jit.trace(model, input_data)
+optimized_torchscript_model = optimize_for_mobile(traced_script_module)
+
 
 # ADD MOBILE OPTIMIZATION
 
 traced_script_module.save("mobile_application/traced_DR_TANet_ref_1024x224.pt")
+optimized_torchscript_model.save("mobile_application/traced_optimized_DR_TANet_ref_1024x224.pt")
