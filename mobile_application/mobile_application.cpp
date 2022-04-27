@@ -57,12 +57,6 @@ class DataLoader
 {
 public:
 
-	DataLoader()
-	{
-    firstFrame = 0.0;
-    currentFrame = 0.0;
-	}
-
   void initImagePair(cv::Mat frame)
   {
     firstFrame = frame.clone(); // Saves only the first frame
@@ -101,6 +95,8 @@ public:
     imagePair = transpose(imagePair, { (2),(1),(0) });
     //add batch dim (an inplace operation just like in pytorch)
     imagePair.unsqueeze_(0);
+
+    imagePair = torch::upsample_bilinear2d(imagePair, {224, 224}, false);
 
     return ToInput(imagePair);
 
@@ -153,9 +149,8 @@ int main(int argc, const char* argv[]) {
 
   DataLoader *dataLoader = new DataLoader();
 
-  uint_fast8_t loopCntr = 0;
-  bool checkLoop = true;
-  for (;;)
+  bool onFirstLoop = true;
+  while (1)
   {
     // wait for a new frame from camera and store it into 'frame'
     cap.read(frame);
@@ -165,27 +160,28 @@ int main(int argc, const char* argv[]) {
         break;
     }
 
-    if (checkLoop && loopCntr < 5)
+    if (onFirstLoop)
     {
       dataLoader->initImagePair(frame);
-      checkLoop = false;
+      onFirstLoop = false;
     }
 
     // Compute prediction
     torch::Tensor prediction = DR_TANet.forward(dataLoader->getImagePair()).toTensor();  
     // Activation
+    prediction = torch::upsample_bilinear2d(prediction, {512, 512}, false);
     prediction = torch::sigmoid(prediction);
     prediction = torch::where(prediction > 0.5, 255, 0);
     prediction = prediction.squeeze(0).to(torch::kUInt8);
+    
+    cv::Mat imagePair;
+    cv::hconcat(dataLoader->getFirstFrame(), dataLoader->getCurrentFrame(), imagePair);
 
-    //Show the results
-    cv::imshow("t0", dataLoader->getFirstFrame());
-    cv::imshow("t1", dataLoader->getCurrentFrame());
+    cv::imshow("Image Pair", imagePair);
     cv::imshow("Output", dataLoader->getPredictionFrame(prediction));
     
     if (cv::waitKey(5) >= 0)
         break;
 
-    loopCntr++;
   }
 }
