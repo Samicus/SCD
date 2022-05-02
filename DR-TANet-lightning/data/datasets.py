@@ -56,8 +56,17 @@ class PCD(Dataset):
             img_t1 = cv2.imread(fn_t1, 1)
             mask = cv2.imread(fn_mask, 0)
         
-        # Invert BMP mask
         mask = 255 - mask
+        
+        if np.random() < 0.1:
+            if np.random() < 0.5:
+                img_t0 = img_t1
+                mask = mask*0
+            else:
+                img_t1 = img_t0
+                mask = mask*0
+        # Invert BMP mask
+        
         
         # Normalization
         img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
