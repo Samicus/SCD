@@ -53,6 +53,7 @@ NUM_WORKERS = misc["NUM_WORKERS"]
 BATCH_SIZE = misc["BATCH_SIZE"]
 PRE_PROCESS = misc["PRE_PROCESS"]
 PCD_CONFIG = misc["PCD_CONFIG"]
+PCD_FRACTION = misc["PCD_FRACTION"]
 
 # Hyper Parameters
 encoder_arch = hparams["encoder_arch"]
@@ -89,7 +90,7 @@ def objective(trial: Trial):
         #fast_dev_run=True   # DEBUG
     )
     
-    data_module = PCDdataModule(0, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial)
+    data_module = PCDdataModule(0, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, PCD_FRACTION, NUM_WORKERS, BATCH_SIZE, trial)
     DATASET = "PCD"
     
     EXPERIMENT_NAME = '{}_{}_trial_{}'.format(LOG_NAME, DATASET, trial.number)

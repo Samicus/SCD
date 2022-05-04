@@ -16,7 +16,7 @@ ROT_TSUNAMI_DIR = pjoin(ROT_PCD_DIR, "TSUNAMI")
 ROT_GSV_DIR = pjoin(ROT_PCD_DIR, "GSV")
 
 class PCDdataModule(LightningDataModule):
-    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, trial=None, EVAL="PCD"):
+    def __init__(self, set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, PCD_FRACTION, NUM_WORKERS, BATCH_SIZE, trial=None, EVAL="PCD"):
         self.set_nr = set_nr
         self.augmentations = augmentations
         self.NUM_WORKERS = NUM_WORKERS
@@ -27,12 +27,12 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, trial=trial)
-        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, trial=trial)
+        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
+        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
         self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
-        TSUNAMI_test = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
-        GSV_test = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full")
+        TSUNAMI_test = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full", PCD_FRACTION=1.0)
+        GSV_test = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full", PCD_FRACTION=1.0)
         concat_data_val = ConcatDataset([TSUNAMI_test, GSV_test])
         
         if EVAL == 'PCD':

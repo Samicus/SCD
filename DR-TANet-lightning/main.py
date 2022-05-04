@@ -49,6 +49,7 @@ NUM_WORKERS = misc["NUM_WORKERS"]
 BATCH_SIZE = misc["BATCH_SIZE"]
 PRE_PROCESS = misc["PRE_PROCESS"]
 PCD_CONFIG = misc["PCD_CONFIG"]
+PCD_FRACTION = misc["PCD_FRACTION"]
 
 # Hyper Parameters
 encoder_arch = hparams["encoder_arch"]
@@ -69,10 +70,10 @@ for set_nr in range(0, NUM_SETS):
         data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
         DATASET = "VL_CMU_CD"
     else:
-        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE)
+        data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, PCD_FRACTION, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
 
-    EXPERIMENT_NAME = '{}_{}_set{}'.format(LOG_NAME, DATASET, set_nr)
+    EXPERIMENT_NAME = '{}_{}_PCD_{}_frac({})_set{}'.format(LOG_NAME, DATASET, PCD_CONFIG, PCD_FRACTION, set_nr)
     
     if parsed_args.aim:
         print("Logging data to AIM")
