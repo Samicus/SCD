@@ -16,6 +16,8 @@ parser.add_argument("-d", "--dataset", required=True,
 	help="TSUNAMI or GSV?")
 parser.add_argument("-n", "--set", required=True,
 	help="set number")
+parser.add_argument("--frac", required=False,
+	help="fraction of data to train on")
 parsed_args = parser.parse_args()
 
 SET_NUM = int(parsed_args.set)
@@ -44,5 +46,5 @@ if parsed_args.cpu:
 else:
 	trainer = Trainer(gpus=1)
 
-data_module = PCDdataModule(SET_NUM, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, NUM_WORKERS, BATCH_SIZE, EVAL=parsed_args.dataset)
+data_module = PCDdataModule(SET_NUM, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, 1.0, NUM_WORKERS, BATCH_SIZE, EVAL=parsed_args.dataset)
 trainer.test(model, data_module)

@@ -13,6 +13,10 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", required=True,
 	help="path to YAML")
+parser.add_argument("--frac", required=False,
+	help="fraction of data to train on")
+parser.add_argument("--res", required=False,
+	help="path to checkpoint for resuming training")
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--det", action="store_true")
@@ -28,6 +32,14 @@ if parsed_args.det:
     DETERMINISTIC = True
     torch.use_deterministic_algorithms(True)
     
+PCD_FRACTION = 1.0
+if parsed_args.frac:
+    PCD_FRACTION = float(parsed_args.frac)
+
+CKPT_PATH = None
+if parsed_args.res:
+    CKPT_PATH = parsed_args.res
+
 # Run-specific augmentation parameters
 config_path = parsed_args.config
 augmentations = load_config(config_path)["RUN"]
@@ -49,7 +61,6 @@ NUM_WORKERS = misc["NUM_WORKERS"]
 BATCH_SIZE = misc["BATCH_SIZE"]
 PRE_PROCESS = misc["PRE_PROCESS"]
 PCD_CONFIG = misc["PCD_CONFIG"]
-PCD_FRACTION = misc["PCD_FRACTION"]
 
 # Hyper Parameters
 encoder_arch = hparams["encoder_arch"]
@@ -92,13 +103,14 @@ for set_nr in range(0, NUM_SETS):
         save_last=True,
         mode="max",
     )
+    
     trainer = Trainer(gpus=NUM_GPU, max_epochs=MAX_EPOCHS,
-                      logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
-                      check_val_every_n_epoch=VALIDATION_STEP,
-                      default_root_dir="checkpoints/set{}".format(set_nr),
-                      log_every_n_steps=5, min_epochs=MAX_EPOCHS/2,
-                      #resume_from_checkpoint = ".aim/vanilla_PCD_set0/6da3f0e1524440ad8b590429/checkpoints/last.ckpt"
-                      )
+                logger=aim_logger, deterministic=DETERMINISTIC, callbacks=[checkpoint_callback],
+                check_val_every_n_epoch=VALIDATION_STEP,
+                default_root_dir="checkpoints/set{}".format(set_nr),
+                log_every_n_steps=5, min_epochs=MAX_EPOCHS/2,
+                resume_from_checkpoint = CKPT_PATH
+                )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
     trainer.fit(model, data_module)

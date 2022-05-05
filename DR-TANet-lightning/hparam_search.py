@@ -21,6 +21,8 @@ CHECKPOINT_DIR = pjoin(dirname(dirname(dirname(__file__))), "Checkpoints")
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", required=True,
 	help="path to YAML")
+parser.add_argument("--frac", required=False,
+	help="fraction of data to train on")
 parser.add_argument("--aim", action="store_true")
 parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--det", action="store_true")
@@ -34,6 +36,10 @@ DETERMINISTIC = False
 if parsed_args.det:
     DETERMINISTIC = True
     torch.use_deterministic_algorithms(True)
+    
+PCD_FRACTION = 1.0
+if parsed_args.frac:
+    PCD_FRACTION = float(parsed_args.frac)
     
 # Run-specific augmentation parameters
 config_path = parsed_args.config
@@ -53,7 +59,6 @@ NUM_WORKERS = misc["NUM_WORKERS"]
 BATCH_SIZE = misc["BATCH_SIZE"]
 PRE_PROCESS = misc["PRE_PROCESS"]
 PCD_CONFIG = misc["PCD_CONFIG"]
-PCD_FRACTION = misc["PCD_FRACTION"]
 
 # Hyper Parameters
 encoder_arch = hparams["encoder_arch"]
