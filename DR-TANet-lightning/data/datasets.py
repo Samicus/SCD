@@ -21,8 +21,8 @@ class PCD(Dataset):
         self.img_t1_root = pjoin(root,'t1')
         self.img_mask_root = pjoin(root,'mask')
         self.filename = list(spt(f)[0] for f in os.listdir(self.img_mask_root) if check_validness(f))
-        self.filename = self.filename[:int(PCD_FRACTION * len(self.filename))]  # Limit to percentage of list
         self.filename.sort()
+        self.filename = self.filename[:int(PCD_FRACTION * len(self.filename))]  # Limit to percentage of list
         aug_params  = load_config("DR-TANet-lightning/config/augparams.yaml")
         self.AUGMENT_ON = AUGMENT_ON
 

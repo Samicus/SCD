@@ -75,7 +75,13 @@ VALIDATION_STEP = 1
 #if parsed_args.aim:
 #    VALIDATION_STEP = 10
 
-for set_nr in range(0, NUM_SETS):
+#start_set = 0
+#if PCD_FRACTION == 0.75 and "M_CP_RE_A" in LOG_NAME:
+#    start_set = 3
+#elif PCD_FRACTION == 0.25 and "vanilla" in LOG_NAME:
+#    start_set = 1
+
+for set_nr in range(0, 1):
     
     if parsed_args.VL_CMU_CD:
         data_module = VL_CMU_CD_DataModule(set_nr, augmentations, AUGMENT_ON, NUM_WORKERS, BATCH_SIZE)
@@ -84,7 +90,7 @@ for set_nr in range(0, NUM_SETS):
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, PCD_FRACTION, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
 
-    EXPERIMENT_NAME = '{}_{}_PCD_{}_frac({})_set{}'.format(LOG_NAME, DATASET, PCD_CONFIG, PCD_FRACTION, set_nr)
+    EXPERIMENT_NAME = '{}_{}_{}_frac({})_set{}'.format(LOG_NAME, DATASET, PCD_CONFIG, PCD_FRACTION, set_nr)
     
     if parsed_args.aim:
         print("Logging data to AIM")

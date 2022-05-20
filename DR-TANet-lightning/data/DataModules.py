@@ -27,13 +27,15 @@ class PCDdataModule(LightningDataModule):
             "paper": {"TSUNAMI": ROT_TSUNAMI_DIR, "GSV": ROT_GSV_DIR}
                        }[PRE_PROCESS]
         
-        TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
-        GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
-        self.concat_data = ConcatDataset([TSUNAMI, GSV])
+        self.TSUNAMI = PCD(pjoin(pre_process["TSUNAMI"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
+        #GSV = PCD(pjoin(pre_process["GSV"], "set{}".format(self.set_nr), "train"), self.augmentations, AUGMENT_ON, PCD_CONFIG, PCD_FRACTION, trial=trial)
+        #self.concat_data = ConcatDataset([TSUNAMI, GSV])
         
         TSUNAMI_test = PCD(pjoin(TSUNAMI_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full", PCD_FRACTION=1.0)
         GSV_test = PCD(pjoin(GSV_DIR, "set{}".format(self.set_nr), "test"), augmentations=self.augmentations, AUGMENT_ON=False, PCD_CONFIG="full", PCD_FRACTION=1.0)
         concat_data_val = ConcatDataset([TSUNAMI_test, GSV_test])
+
+        EVAL='TSUNAMI'
         
         if EVAL == 'PCD':
             self.test_data = concat_data_val
@@ -46,7 +48,7 @@ class PCDdataModule(LightningDataModule):
             exit(1)
             
     def train_dataloader(self):
-        return  DataLoader(self.concat_data,
+        return  DataLoader(self.TSUNAMI,
                            num_workers=self.NUM_WORKERS, 
                            batch_size=self.BATCH_SIZE,
                            shuffle=True)
