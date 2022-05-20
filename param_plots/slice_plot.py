@@ -85,6 +85,7 @@ def _get_slice_plot(
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
     
+
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
         _, ax = plt.subplots()
@@ -115,7 +116,7 @@ def _get_slice_plot(
     if n_params == 1:
         # Set up the graph style.
         fig, axs = plt.subplots()
-        axs.set_title("Slice Plot")
+        #axs.set_title("Slice Plot")
         # Draw a scatter plot.
         sc = _generate_slice_subplot(
             trials, sorted_params[0], axs, cmap, padding_ratio, obj_values, target_name
@@ -128,7 +129,7 @@ def _get_slice_plot(
         fig, axs = plt.subplots(
             int(n_params/2), 2, sharey=True, figsize=(min_figwidth * n_params, fighight)
         )
-        fig.suptitle("Slice Plot")
+        #fig.suptitle("Slice Plot")
         fig.text(0.04, 0.5, 'F1-Score', va='center', rotation='vertical', size=20)
         
         # Draw scatter plots.
@@ -146,6 +147,8 @@ def _get_slice_plot(
     axcb = fig.colorbar(sc, ax=axs)
     
     axcb.set_label("#Trials")
+
+
     return axs
 
 
@@ -162,13 +165,17 @@ def _generate_slice_subplot(
     y_values = []
     trial_numbers = []
     scale = None
-    
+
     for t, obj_v in zip(trials, obj_values):
         if param in t.params:
             x_values.append(t.params[param])
             y_values.append(obj_v)
             trial_numbers.append(t.number)
-    
+    print(x_values)
+    print(param)
+    x_values =[float(i)/max(x_values) for i in x_values]
+        
+
     #ax.set(ylabel=target_name)
     ax.set_title(param)
     if _is_log_scale(trials, param):
@@ -182,6 +189,7 @@ def _generate_slice_subplot(
    
     sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey", label=param)
     ax.label_outer()
+  
 
     return sc
 
