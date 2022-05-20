@@ -6,6 +6,11 @@ from os.path import join as pjoin, splitext as spt
 import albumentations as A
 from util import load_config
 
+#import yaml
+#def load_config(hparams_path):
+#    with open(hparams_path) as f:
+#        config = yaml.load(f, Loader=yaml.FullLoader)
+#        return config
 
 class DataAugment:
     def __init__(self, t0_root, t1_root, mask_root, filename, augmentations, aug_params,shape=(256, 256), trial=None):
@@ -419,23 +424,23 @@ if __name__ == '__main__':
     
     dirname = os.path.dirname
     #root = pjoin(dirname(dirname(dirname(dirname(__file__)))), "TSUNAMI/set0/train")
-    root = '/home/samnehme/Dev/SCD_project/TSUNAMI/set0/train'
+    root = '/work/home/arwin/rotated_PCD/GSV/set2/train'
     img_t0_root = pjoin(root,'t0')
     img_t1_root = pjoin(root,'t1')
-    img_mask_root = pjoin(root,'mask/bmp')
+    img_mask_root = pjoin(root,'mask')
     filename = list(spt(f)[0] for f in os.listdir(img_mask_root))
 
     config_path = "DR-TANet-lightning/config/augmentations/M_CP_RE_A.yaml"
     augmentations = load_config(config_path)["RUN"]
     aug_params = load_config("DR-TANet-lightning/config/augparams.yaml")
     
-    data_augmenter = DataAugment(img_t0_root, img_t1_root, img_mask_root, filename, augmentations, aug_params, shape=(224, 1024))
+    data_augmenter = DataAugment(img_t0_root, img_t1_root, img_mask_root, filename, augmentations, aug_params, shape=(256, 256))
 
     index = 18
     img_t0, img_t1, img_mask = data_augmenter(index)
 
 
-    folder_path = '/home/samnehme/Dev/SCD_project/SCD/DR-TANet-lightning/images'
+    folder_path = '/work/home/arwin/TEST_AUGS'
 
     #img_t0 = cv2.cvtColor(img_t0, cv2.COLOR_BGR2RGB)
     #img_t0 = Image.fromarray(img_t0.astype(np.uint8))

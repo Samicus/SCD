@@ -82,6 +82,16 @@ class TANet(LightningModule):
         opt.step()
         
         self.log("train loss", train_loss, on_epoch=True, prog_bar=True, logger=True)
+
+        self.logger.experiment.track(
+                    Image(inputs_train, "train{}".format(batch_idx)), # Pass image data and/or caption
+                    name="train_batch_{}".format(batch_idx),  # The name of image set
+                    step=idx,   # Step index (optional)
+                    #epoch=0,   # Epoch (optional)
+                    context={   # Context (optional)
+                        'subset': 'training',
+                    }
+                )
         
         return train_loss
     
@@ -142,10 +152,10 @@ class TANet(LightningModule):
         accuracy = (accuracy_change + accuracy_no_change) / 2.0
         f1_score = (f1_score_change + f1_score_no_change) / 2.0
         
-        if LOG_IMG == True or LOG_IMG == None:
-            
-            self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
-            self.on_train_start
+        #if LOG_IMG == True or LOG_IMG == None:
+        #    
+        #    self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
+        #    self.on_train_start
 
         metrics = {
             'precision': precision,
