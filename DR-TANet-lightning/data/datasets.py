@@ -26,7 +26,7 @@ class PCD(Dataset):
         aug_params  = load_config("DR-TANet-lightning/config/augparams.yaml")
         self.AUGMENT_ON = AUGMENT_ON
 
-        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, aug_params, shape=(224, 1024), trial=trial)    # (height, width)
+        self.data_augment = DataAugment(self.img_t0_root, self.img_t1_root, self.img_mask_root, self.filename, augmentations, aug_params, shape=(256, 256), trial=trial)    # (height, width)
         self.PCD_CONFIG = PCD_CONFIG
         
         self.transform = A.Compose([
@@ -60,12 +60,18 @@ class PCD(Dataset):
         # Invert BMP mask
         mask = 255 - mask
         
+        if mask.shape[0] == 224 and mask.shape[1] == 224:
+            img_t0 = cv2.resize(img_t0, (256, 256))
+            img_t1 = cv2.resize(img_t1, (256, 256))
+            mask   = cv2.resize(mask,   (256, 256))
         # Normalization
         img_t0_r_ = np.asarray(img_t0).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
         img_t1_r_ = np.asarray(img_t1).astype('f').transpose(2, 1, 0) / 255.0               # -- > (RGB, height, width)
         mask_r_ = np.asarray(mask[:, :, np.newaxis]>128).astype('f').transpose(2, 1, 0)     # -- > (RGB, height, width)
         
         # Cropped or full images
+        
+
         if self.PCD_CONFIG == "crop":
             input_, mask_ = self.crop(img_t0_r_, img_t1_r_, mask_r_)
         elif self.PCD_CONFIG == "full":
