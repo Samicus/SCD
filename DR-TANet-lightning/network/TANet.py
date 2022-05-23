@@ -24,7 +24,7 @@ class TANet(LightningModule):
         super(TANet, self).__init__()
         self.EXPERIMENT_NAME = EXPERIMENT_NAME
         if 'PCD' in EXPERIMENT_NAME:
-            self.WEIGHT = torch.tensor(2)
+            self.WEIGHT = torch.tensor([2, 2])
         elif 'VL_CMU_CD' in EXPERIMENT_NAME:
             self.WEIGHT = torch.tensor(4)
         else:
@@ -92,8 +92,8 @@ class TANet(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         LOG_IMG = False
-        if self.logger:
-            metrics = LOG_IMG = True
+        #if self.logger:
+        #    metrics = LOG_IMG = True
         metrics = self.evaluate_batch(batch, batch_idx, LOG_IMG)
         self.log_dict(metrics, on_epoch=True, prog_bar=True, logger=True)
         return metrics
@@ -145,7 +145,7 @@ class TANet(LightningModule):
         if LOG_IMG == True or LOG_IMG == None:
             
             self.gen_img(inputs_test, preds, mask_test, batch_idx, LOG_IMG)
-            self.on_train_start
+            #self.on_train_start
 
         metrics = {
             'precision': precision,
@@ -155,7 +155,7 @@ class TANet(LightningModule):
             "val_loss": val_loss
             }
         
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
         
         return metrics
     

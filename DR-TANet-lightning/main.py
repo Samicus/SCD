@@ -84,7 +84,7 @@ for set_nr in range(0, NUM_SETS):
         data_module = PCDdataModule(set_nr, augmentations, AUGMENT_ON, PRE_PROCESS, PCD_CONFIG, PCD_FRACTION, NUM_WORKERS, BATCH_SIZE)
         DATASET = "PCD"
 
-    EXPERIMENT_NAME = '{}_{}_PCD_{}_frac({})_set{}'.format(LOG_NAME, DATASET, PCD_CONFIG, PCD_FRACTION, set_nr)
+    EXPERIMENT_NAME = '{}_{}_{}_frac({})_set{}'.format(LOG_NAME, DATASET, PCD_CONFIG, PCD_FRACTION, set_nr)
     
     if parsed_args.aim:
         print("Logging data to AIM")

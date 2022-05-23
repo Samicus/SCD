@@ -8,6 +8,7 @@ from data.augmentations import DataAugment
 import albumentations as A
 from PIL import Image
 from util import load_config
+import torch
 
 def check_validness(f):
     return any([i in spt(f)[1] for i in ['jpg', 'bmp', 'png']])
@@ -101,9 +102,15 @@ class PCD(Dataset):
         y_r = y_l + crop_size
         
         # Random crop
-        img_t0 = img_t0[:, y_l:y_r, x_l:x_r]
-        img_t1 = img_t1[:, y_l:y_r, x_l:x_r]
-        mask = mask[:, y_l:y_r, x_l:x_r]
+        img_t0 = torch.from_numpy(img_t0[:, y_l:y_r, x_l:x_r])
+        img_t1 = torch.from_numpy(img_t1[:, y_l:y_r, x_l:x_r])
+        mask = torch.from_numpy(mask[:, y_l:y_r, x_l:x_r])
+        
+        # Random rotation
+        num_rot = np.random.randint(0, 4)
+        img_t0 = torch.rot90(img_t0, k=num_rot, dims=(1, 2))
+        img_t1 = torch.rot90(img_t1, k=num_rot, dims=(1, 2))
+        mask = torch.rot90(mask, k=num_rot, dims=(1, 2))
         
         input_ = np.concatenate((img_t0, img_t1), axis=0)
         mask_ = mask
