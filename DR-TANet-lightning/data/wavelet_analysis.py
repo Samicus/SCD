@@ -14,6 +14,7 @@ matplotlib.use("TKAgg")
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", required=True,
     help="path to dataset")
+parser.add_argument("--mask", action="store_true")
 parser.add_argument("--zero_high", action="store_true")
 parser.add_argument("--zero_low", action="store_true")
 parser.add_argument("--LH", action="store_false")
@@ -22,7 +23,7 @@ parser.add_argument("--HH", action="store_false")
 parsed_args = parser.parse_args()
 
 INPUT_PATH = parsed_args.input
-DECOMPOSITION_LEVELS = 1
+DECOMPOSITION_LEVELS = 7
 DATASET_FOLDERS = ["t0", "t1"]
 HIGH_PASS_LABELS = ["LH", "HL", "HH"]
 ZERO_HIGH_PASS = [parsed_args.LH, parsed_args.HL, parsed_args.HH]
@@ -63,10 +64,10 @@ def wavelet_compress(decomposition_levels):
     
     # Wavelet transform objects
     dwt = DWTForward(J=decomposition_levels, # level of the transform 
-                        wave='db4', # wavelet function
+                        wave='haar', # wavelet function
                         #mode='symmetric'
                         ) # padding at edges
-    idwt = DWTInverse(wave='db4',
+    idwt = DWTInverse(wave='haar',
                       #mode='symmetric'
                       )
     
@@ -75,18 +76,24 @@ def wavelet_compress(decomposition_levels):
     
     print("Compression ratios for {}".format(DATASET_NAME))
     
-    for sub_dir in DATASET_FOLDERS:
+    file_ext = "*.jpg"
+    sub_directories = DATASET_FOLDERS
+    if parsed_args.mask:
+        file_ext = "*.bmp"
+        sub_directories = ["mask"]
+    
+    for sub_dir in sub_directories:
         
         current_dir = pjoin(INPUT_PATH, sub_dir)
         
         original_byte_size[sub_dir] = 0.0
         compressed_byte_size[sub_dir] = 0.0
         
-        for img_path in glob(pjoin(current_dir, "*.jpg")):
+        for img_path in glob(pjoin(current_dir, file_ext)):
             
             # Save byte size of original image
             original_byte_size[sub_dir] += os.stat(img_path).st_size
-        
+            
             # Open and preprocess image
             img = Image.open(img_path)
             img = ImageOps.grayscale(img)   # To grayscale
@@ -124,9 +131,6 @@ def wavelet_compress(decomposition_levels):
             
         print("R_{} = {}".format(sub_dir, original_byte_size[sub_dir] / compressed_byte_size[sub_dir]))
         
-    return (original_byte_size)
-            
+        
 if __name__ == '__main__':
-    
-    for decomposition_levels in range(DECOMPOSITION_LEVELS):
-        wavelet_compress(decomposition_levels)
+    wavelet_compress(DECOMPOSITION_LEVELS)
