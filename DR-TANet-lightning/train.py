@@ -1,14 +1,12 @@
 from network.TANet import TANet
 from data.DataModules import PCDdataModule, VL_CMU_CD_DataModule
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from os.path import join as pjoin
 from aim.pytorch_lightning import AimLogger
 import argparse
 import torch
-import os
 from util import load_config
 from pytorch_lightning.callbacks import ModelCheckpoint
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", required=True,
@@ -113,4 +111,6 @@ for set_nr in range(0, NUM_SETS):
                 )
     
     model = TANet(encoder_arch, local_kernel_size, stride, padding, groups, drtam, refinement, EXPERIMENT_NAME, DETERMINISTIC=DETERMINISTIC)
+    training_start_time = time.time()
     trainer.fit(model, data_module)
+    print('Training finished, took {:.2f}s'.format(time.time() - training_start_time))
